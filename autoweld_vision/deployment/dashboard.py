@@ -33,7 +33,8 @@ st.markdown("""
     .status-ok { color: #28a745; font-weight: bold; }
     .status-defect { color: #dc3545; font-weight: bold; }
     </style>
-    """, unsafe_allow_stdio=True)
+    """, unsafe_allow_html=True)
+
 
 # --- Sidebar ---
 st.sidebar.image("https://img.icons8.com/fluency/96/factory.png", width=80)
