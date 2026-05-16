@@ -77,9 +77,10 @@ if menu == "Live Monitor":
     with col_left:
         st.subheader("Latest Inspection")
         if os.path.exists("test_weld.png"):
-            st.image("test_weld.png", caption="Live Camera Feed - Station B4", use_column_width=True)
+            st.image("test_weld.png", caption="Live Camera Feed - Station B4", use_container_width=True)
         else:
             st.warning("No live camera feed detected.")
+
 
     with col_right:
         st.subheader("System Decision")
@@ -131,7 +132,7 @@ elif menu == "Audit Explorer":
     if files:
         selected_file = st.selectbox("Select Audit Report", files)
         if selected_file:
-            st.image(os.path.join(AUDIT_LOGS_DIR, selected_file), use_column_width=True)
+            st.image(os.path.join(AUDIT_LOGS_DIR, selected_file), use_container_width=True)
             with open(os.path.join(AUDIT_LOGS_DIR, selected_file), "rb") as file:
                 st.download_button("Download Official Audit PNG", file, file_name=selected_file)
     else:
@@ -145,7 +146,7 @@ elif menu == "Inference Lab":
     
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.image(image, caption="Uploaded Image", use_container_width=True)
         
         if st.button("🚀 Run SOTA Inspection"):
             with st.spinner("Analyzing with PatchCore/EfficientAD Ensemble..."):
