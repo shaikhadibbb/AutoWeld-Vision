@@ -48,11 +48,15 @@ pip install -r requirements-standard.txt
 # https://www.mvtec.com/company/research/datasets/mvtec-ad
 # Extract to: ./datasets/mvtec/
 
-# 5. Train baseline model
-python test_inspection.py  # Trains PatchCore on 'bottle' category
+# 5. Start the API Server
+python -m autoweld_vision.deployment.server
 
-# 6. Run inspection
+# 6. Start the Real-Time Dashboard
+streamlit run autoweld_vision/deployment/dashboard.py
+
+# 7. Run inspection
 python test_inspection.py  # Uses trained model for real inference
+
 ```
 
 ## 📚 SOTA Reference
