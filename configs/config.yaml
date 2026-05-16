@@ -1,0 +1,21 @@
+# Default configuration for AutoWeld-Vision
+train:
+  epochs: 100
+  batch_size: 32
+  lr: 0.001
+  mixed_precision: true
+
+data:
+  root: "/datasets/mvtec"
+  tier: "A"
+  resolution: 256
+
+model:
+  name: "patchcore"
+  params:
+    backbone: "resnet18"
+    coreset_sampling_ratio: 0.1
+
+evaluation:
+  metrics: ["auroc", "pro", "f1"]
+  threshold_method: "otsu"

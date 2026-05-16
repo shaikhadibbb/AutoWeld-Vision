@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+ENV/
+
+# Data
+datasets/
+*.tar.xz
+*.zip
+
+# Models
+weights/
+*.ckpt
+*.pth
+*.pt
+
+# Logs
+audit_logs/
+results/
+wandb/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
