@@ -120,6 +120,12 @@ if run_btn and selected_image_path:
             with col_mode:
                 st.metric("Pipeline Mode", results["mode"].upper())
 
+            if results["mode"].lower() == "demo":
+                st.warning(
+                    "💡 **DEMO MODE**: Showing simulated anomaly scores for demonstration. "
+                    "For production use, train PatchCore on real baseline images using `python scripts/run_benchmark.py`."
+                )
+
             st.write("---")
 
             # Display Side-by-Side Images (Original and Heatmap Audit Trail)
