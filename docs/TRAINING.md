@@ -1,38 +1,41 @@
-# Training Roadmap for AutoWeld-Vision
+# Training Guide
 
-## Quick Start (One Model, One Category)
+## Quick Start: Single Category
 
-Train PatchCore on MVTec AD "bottle" as baseline:
-
-```bash
-# Install anomalib CLI
-pip install anomalib
-
-# Download MVTec AD manually from https://www.mvtec.com/company/research/datasets/mvtec-ad
-# Extract to ./datasets/mvtec/
-
-# Train
-anomalib train --model Patchcore \
-  --data anomalib.data.datamodules.image.mvtecad.MVTecAD \
-  --data.root ./datasets/mvtec \
-  --data.category bottle
-```
-
-Expected time: ~20 minutes on Apple Silicon (M1/M2), ~2 minutes on NVIDIA GPU.
-
-## Full Benchmark (All Models, All Categories)
+Train PatchCore on MVTec AD `bottle` using the built-in benchmark script:
 
 ```bash
-# Run all models on all MVTec AD categories
-python scripts/full_benchmark.py --config configs/experiment/benchmark_all.yaml
+python scripts/run_benchmark.py --categories bottle --output results/
 ```
 
-Expected time: ~8 hours on NVIDIA RTX 4090.
+The MVTec AD dataset is downloaded automatically by Anomalib on the first run. Trained weights are saved to `weights/patchcore_bottle.pt`.
 
-## Edge Optimization
+Expected time: approximately 2 minutes on Apple Silicon (MPS), under 1 minute on NVIDIA CUDA.
 
-After training, export to TensorRT:
+## Full Benchmark: All Categories
+
+To reproduce all benchmark numbers from the README:
 
 ```bash
-python scripts/export_tensorrt.py --model_path results/patchcore/model.ckpt
+python scripts/run_benchmark.py --categories bottle cable metal_nut --output results/
 ```
+
+This trains PatchCore on all three categories, trains EfficientAD on `bottle`, optimizes the ensemble weights via SLSQP, and writes results to `results/benchmark.json`.
+
+Expected time: approximately 5 minutes on Apple Silicon (MPS), 2 minutes on NVIDIA CUDA.
+
+## Running Inference
+
+After training, inspect any weld image:
+
+```bash
+python test_inspection.py --image test_weld.png --vin BMW-G60-2026
+```
+
+The inspection generates an IATF 16949 audit report in `audit_logs/`.
+
+## Hardware Requirements
+
+- **Minimum**: 8 GB RAM, Python 3.11+
+- **Recommended**: Apple Silicon Mac with MPS or NVIDIA GPU with CUDA
+- **Storage**: ~800 MB for the MVTec AD subset (bottle, cable, metal_nut)

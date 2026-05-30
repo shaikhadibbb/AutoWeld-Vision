@@ -1,0 +1,5 @@
+# Linguist overrides — prevent Jupyter notebook JSON from inflating language stats
+*.ipynb linguist-generated=true
+
+# Ensure Python is the primary detected language
+*.py linguist-detectable=true
