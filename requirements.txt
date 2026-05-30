@@ -16,6 +16,8 @@ imgaug>=0.4.0
 anomalib==1.1.0
 timm>=0.9.0
 torchmetrics>=1.0.0
+FrEIA>=0.2
+open_clip_torch>=2.0.0
 opencv-python-headless
 matplotlib>=3.7.0
 pillow>=10.0.0
