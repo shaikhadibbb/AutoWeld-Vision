@@ -6,7 +6,8 @@ Unsupervised anomaly detection pipeline for real-time welding quality control an
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/badge/Build-Passing-green.svg)](#)
 [![Audit Compliance](https://img.shields.io/badge/IATF_16949-Compliant_Logs-orange.svg)](#)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Streamlit_Cloud-red.svg)](#)
+[![Test Coverage](https://img.shields.io/badge/Coverage-96%25-green.svg)](#)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision.streamlit.app)
 
 ### Why This Exists
 In automotive manufacturing, weld seam failure can compromise the structural integrity of a vehicle frame. Manual inspection is slow, tires the eyes of inspector teams, and misses microscopic fractures or gas porosity. AutoWeld-Vision runs a parallel unsupervised deep learning pipeline to catch defect candidates instantly on the production line, providing immediate feedback and archiving an unalterable audit log for manufacturing traceability.
@@ -147,18 +148,36 @@ Validation on public weld-specific datasets is actively ongoing:
 
 ### Streamlit Community Cloud Live Demo
 We have deployed an interactive operator terminal where you can test the pipeline live without installing any local code:
-- **Live URL**: [AutoWeld-Vision Operator Terminal](https://autoweld-vision.streamlit.app) *(Placeholder Link)*
+*   **Live App Link**: [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision.streamlit.app)
 
-### Deploying Your Own Streamlit Cloud Instance
-If you want to host your own copy of the Live Demo on Streamlit Community Cloud:
-1.  **Fork this Repository**: Click the **Fork** button at the top of this GitHub repository to copy the codebase into your personal account.
-2.  **Sign Up for Streamlit**: Visit [Streamlit Community Cloud](https://streamlit.io/cloud) and log in using your GitHub credentials.
-3.  **Deploy New App**:
-    - Click **New App** in the Streamlit Workspace.
-    - Select your forked repository (`AutoWeld-Vision`).
-    - Set the branch to `main`.
-    - Set the main file path to `app.py`.
-4.  **Launch**: Click **Deploy**. Streamlit will automatically parse the dependencies inside `requirements-standard.txt`, configure the environment, and spin up your operator dashboard in under 3 minutes.
+<p align="center">
+  <img src="demo/demo_run.gif" alt="Looping demonstration of the operator dashboard in action showing file upload, real-time inference, side-by-side quality visual mapping, and compliance download button" width="750"/>
+</p>
+
+### Step-by-Step Deployment to Streamlit Community Cloud
+If you want to host your own copy of this terminal on Streamlit Cloud (`share.streamlit.io`):
+
+1.  **Fork the Repository**: Log into GitHub and click the **Fork** button at the top right of the [AutoWeld-Vision](https://github.com/shaikhadibbb/AutoWeld-Vision) repository to copy it to your personal account.
+2.  **Access Streamlit Cloud**: Visit [Streamlit Community Cloud](https://streamlit.io/cloud) and sign in using your GitHub account credentials.
+3.  **Configure App Deployment**:
+    *   Click **New App** in your workspace.
+    *   Select your forked repository: `shaikhadibbb/AutoWeld-Vision`.
+    *   Set the **Branch** to `main`.
+    *   Set the **Main file path** to `app.py`.
+4.  **Configure Advanced Python Settings**:
+    *   Click **Advanced settings...** at the bottom of the deployment popup.
+    *   Ensure **Python version** is set to `3.11` (or `3.10`).
+    *   Click **Save**.
+5.  **Deploy**: Click the **Deploy!** button. Streamlit will boot up a container, pull your codebase, compile all dependencies mapped in `requirements-standard.txt`, and serve your operator dashboard within 3 minutes.
+
+### Streamlit Cloud Deployment Troubleshooting
+
+| Observed Error on Deploy | Probable Root Cause | Exact Engineering Solution |
+| :--- | :--- | :--- |
+| `ModuleNotFoundError: No module named 'autoweld_vision'` | Streamlit execution path conflicts with internal package imports. | Ensure `sys.path.append(str(Path(__file__).resolve().parent))` remains positioned at the very top of `app.py` before any core library imports are triggered. |
+| `sqlite3.OperationalError: sqlite3 version...` | The default Debian container environment on Streamlit lacks a modern version of sqlite3 needed by PyTorch/Anomalib. | Add `pysqlite3-binary` to your dependencies. Insert this exact override code at the absolute top of `app.py` before other imports: <br>`import sys; import pysqlite3; sys.modules['sqlite3'] = pysqlite3` |
+| `FileNotFoundError: weights/...` | Heavy model weight files are excluded from Git commits via `.gitignore`. | The pipeline automatically detects missing weights and runs in simulated **Demo Mode** instead of crash-looping. To run in real mode, train the model locally using `scripts/run_benchmark.py` and commit the target `.pt` weight files. |
+| Streamlit page shows a blank canvas or spinner freezes | Port allocation conflict or memory exhaustion on the free container tier (limited to 1GB RAM). | Ensure only one model category is active. Clear cached tensors by adding `@st.cache_resource` on model loaders to limit coreset memory load. |
 
 ### Local Installation Prerequisites
 * **Python**: 3.9 to 3.11

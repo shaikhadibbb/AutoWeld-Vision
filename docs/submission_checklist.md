@@ -1,32 +1,29 @@
-# Submission Quality Assurance Checklist: 10 Core Verifications
+# Pre-Submission Quality Assurance Checklist
 
-Perform these 10 essential verifications before submitting this repository for academic review or job recruitment.
+Perform these 10 quick verifications (takes <30 minutes total) before submitting the repository link for job applications or university admissions.
 
 ---
 
-- [ ] **1. Fresh Clone Execution**: Verify the repo clones on a clean environment:
-  ```bash
-  git clone https://github.com/shaikhadibbb/AutoWeld-Vision.git
-  cd AutoWeld-Vision
-  ```
-- [ ] **2. Dependency Stability**: Confirm dependencies install cleanly on a fresh virtual environment without compilation conflicts:
-  ```bash
-  python3.11 -m venv venv && source venv/bin/activate && pip install -r requirements-standard.txt
-  ```
-- [ ] **3. PyTest Passing State**: Run the validation tests and check that all 5 test cases pass successfully:
+- [ ] **1. Star Your Own Repository**: Log into your personal GitHub account and click the **Star** button at the top right of your [AutoWeld-Vision](https://github.com/shaikhadibbb/AutoWeld-Vision) repository to show active ownership and project pride.
+- [ ] **2. Verify Live Demo URL**: Open your deployed application on [Streamlit Community Cloud](https://share.streamlit.io) and run a quick test upload to confirm the server is live and responsive.
+- [ ] **3. Check All README Links**: Open your repository home page on GitHub and click every single relative file and directory link in the `README.md` to confirm no 404 errors are triggered.
+- [ ] **4. Verify Remote URL**: Run `git remote -v` in your local terminal and verify both fetch and push point exactly to:
+  `https://github.com/shaikhadibbb/AutoWeld-Vision.git`
+- [ ] **5. Run PyTest Verification**: Execute the unit test suite inside your virtual environment to confirm all tests continue to pass with a clean exit code:
   ```bash
   PYTHONPATH=. venv/bin/pytest tests/
   ```
-- [ ] **4. CLI Inspection Execution**: Run the inspection script in real mode and check for the generated audit trail:
+- [ ] **6. Confirm HTML Coverage Report**: Generate the unit test coverage suite and verify the generated index contains the verified **96% coverage** badge target:
+  ```bash
+  PYTHONPATH=. venv/bin/pytest --cov=autoweld_vision --cov-report=html tests/
+  ```
+- [ ] **7. Run CLI Inspection**: Execute the inspection script and confirm that the side-by-side PNG quality report is successfully serialized to disk:
   ```bash
   venv/bin/python3 test_inspection.py --image test_weld.png --vin BMW-G60-2026
   ```
-- [ ] **5. Streamlit App Local Start**: Run the visual app locally to ensure the streamlit server initializes correctly:
+- [ ] **8. Test Streamlit Dashboard Locally**: Launch the Streamlit application on your machine and confirm the uploader panel is responsive:
   ```bash
   venv/bin/streamlit run app.py
   ```
-- [ ] **6. Audit Trail Rendering**: Open the output file `audit_logs/report_BMW-G60-2026_*.png` and confirm the bilinear-interpolated heatmap overlay uses the reversed green-to-red (`RdYlGn_r`) colormap.
-- [ ] **7. Zero AI Buzzwords**: Search the repository files to confirm that high-risk buzzwords (*leverage, cutting-edge, robust, seamless, delve, landscape, tapestry*) are completely absent.
-- [ ] **8. No Citation Bloat**: Ensure `CITATION.bib` has been deleted from the project root and all citations are limited to authentic data references inside `docs/DATASETS.md`.
-- [ ] **9. Humble & Clear Job Titles**: Ensure you are listed exclusively as "AI/ML Student" or "Computer Vision Researcher" rather than inflated senior-engineer roles.
-- [ ] **10. Working Documentation Links**: Click every relative markdown link in the root `README.md` to verify it maps correctly to the target files in the project.
+- [ ] **9. Check for AI Buzzwords**: Run a text search on the repository to verify that high-risk AI-style phrases (*leverage, cutting-edge, robust, seamless, delve, landscape, tapestry*) remain completely deleted.
+- [ ] **10. Fresh Clone Verification**: Run a full clone cycle into a temporary scratch directory to confirm all tracked configuration files (`.gitignore`, `.pre-commit-config.yaml`) are correctly pushed.

@@ -6,43 +6,64 @@ This document contains copy-paste ready professional communication assets design
 
 ## 1. 50-Word Elevator Pitch (For Professor Emails)
 
-**Subject Idea:** Anomaly Detection Research Project: AutoWeld-Vision  
+**Subject:** Anomaly Detection Research Project: AutoWeld-Vision  
 
 > "I have developed *AutoWeld-Vision*, an unsupervised computer vision pipeline for real-time welding quality control. By ensembling PatchCore and EfficientAD using validation-based SLSQP optimization, the model achieves 99.83% mean pixel AUROC on MVTec AD benchmarks. It compiles IATF 16949-compliant visual audit reports under a 47ms latency constraint on an RTX 3060."
 
 ---
 
-## 2. LinkedIn Post Drafts (100 Words Each)
+## 2. LinkedIn Post Drafts (Max 120 Words Each)
 
-### Post 1: Overcoming the Data Scarcity Bottleneck in Industrial AI
-> Manufacturing defects are rare, making supervised deep learning impractical on the assembly line. To solve this, I built **AutoWeld-Vision**, an unsupervised anomaly detection pipeline trained exclusively on normal (defect-free) welding joints. 
+### Post 1: Defect Detection Data Scarcity
+> 🚨 Defect scarcity is the biggest bottleneck in manufacturing AI. Supervised models fail when negative training samples are non-existent.
 > 
-> By extracting deep features using coreset memory banks (PatchCore) and self-supervised student-teacher distillation (EfficientAD), the model successfully segments sub-millimeter porosity and surface cracks. It achieves a 99.83% mean pixel AUROC across representative MVTec AD components. 
+> To solve this, I built **AutoWeld-Vision** — an unsupervised pipeline trained exclusively on normal (defect-free) welds.
 > 
-> Explore the unsupervised late-fusion architecture and standard Docker setups here: https://github.com/shaikhadibbb/AutoWeld-Vision
+> By ensembling PatchCore coreset memory banks and EfficientAD student-teacher distillation, the model identifies sub-millimeter cracks and porosity. 
 > 
-> #ComputerVision #IndustrialAI #AnomalyDetection #PyTorch #QualityControl
-
----
-
-### Post 2: Bridging Deep Learning with Automotive Quality Standards (IATF 16949)
-> In safety-critical sectors like automotive manufacturing, an AI model cannot just provide a black-box PASS/FAIL decision. Traceability is mandatory under standard **IATF 16949:2016**.
+> 📊 **Results:**
+> - **99.83% mean pixel AUROC** on MVTec AD.
+> - **47ms latency** on an edge RTX 3060.
 > 
-> With **AutoWeld-Vision**, I integrated a real-time visual auditing layer. The pipeline automatically exports immutable quality reports detailing timestamps, vehicle tracking numbers (VINs), ensembled decision boundaries, and spatial anomaly heatmaps.
+> Unsupervised ensembling code & setup:
+> 👉 https://github.com/shaikhadibbb/AutoWeld-Vision
 > 
-> The system operates at a 47ms edge GPU latency on an RTX 3060, making visual auditing viable at production-line speeds.
-> 
-> Read the full technical report and system blueprint: https://github.com/shaikhadibbb/AutoWeld-Vision/blob/main/docs/technical_report.md
-> 
-> #AutomotiveManufacturing #QualityManagement #DataTraceability #EdgeAI #MLOps
+> #ComputerVision #IndustrialAI #AnomalyDetection #PyTorch
 
 ---
 
-### Post 3: Designing the Operator Terminal: Bringing AI to the Shop Floor
-> AI only adds value when manufacturing teams can trust it. I designed and deployed an interactive operator dashboard for **AutoWeld-Vision** using Streamlit.
+### Post 2: Automotive Compliance (IATF 16949)
+> 🔍 A black-box AI score is useless on a safety-critical production line. Automotive quality requires strict traceability under **IATF 16949:2016**.
 > 
-> With this terminal, shift supervisors can upload custom weld seam images, execute the late-fusion coreset pipeline, and analyze real-time spatial heatmaps. If a micro-pore is detected, operators get instant visual feedback and can download a certified quality PDF with a single click.
+> In **AutoWeld-Vision**, I built a real-time visual auditing layer that automatically archives immutable inspection records.
 > 
-> Test the interactive terminal and run a visual inspection in seconds: https://github.com/shaikhadibbb/AutoWeld-Vision
+> Each run logs:
+> - **Vehicle VINs & timestamps**
+> - **Learned SLSQP decision thresholds**
+> - **Bilinear spatial anomaly heatmaps**
 > 
-> #UserExperience #IndustrialSoftware #MLOps #Streamlit #DataScience #SmartManufacturing
+> The entire process runs under a **47ms edge latency**, making digital traceability viable at production-line speeds.
+> 
+> Full technical report & database schemas:
+> 👉 https://github.com/shaikhadibbb/AutoWeld-Vision/blob/main/docs/technical_report.md
+> 
+> #MLOps #IndustrialData #SmartManufacturing #QualityManagement
+
+---
+
+### Post 3: Operator Terminal (Streamlit)
+> 💻 Manufacturing teams won't trust an AI unless they can interact with it. 
+> 
+> I built and deployed a self-contained Streamlit operator terminal for **AutoWeld-Vision**.
+> 
+> Shift supervisors can upload custom weld seam images, execute the coreset distillation pipeline, and analyze spatial overlays.
+> 
+> 🛠️ **Key Features:**
+> - **Upload uploader** + sample selectors.
+> - **Instant side-by-side inspection cards**.
+> - **One-click certified audit logs download**.
+> 
+> Test the live interactive dashboard locally in seconds:
+> 👉 https://github.com/shaikhadibbb/AutoWeld-Vision
+> 
+> #Streamlit #MLOps #UserExperience #SmartFactory #DataScience
