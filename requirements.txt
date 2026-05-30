@@ -3,6 +3,14 @@ torch>=2.0.0
 torchvision>=0.15.0
 lightning>=2.1.0
 pytorch-lightning>=2.1.0
+kornia>=0.7.0
+omegaconf>=2.3.0
+einops>=0.8.0
+jsonargparse>=4.20.0
+rich>=13.0.0
+pandas>=1.5.0
+scikit-learn>=1.2.0
+scikit-image>=0.20.0
 anomalib==1.1.0
 opencv-python-headless
 matplotlib>=3.7.0
