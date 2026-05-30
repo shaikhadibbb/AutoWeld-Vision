@@ -35,6 +35,8 @@ jobs:
       run: mypy autoweld_vision --ignore-missing-imports
 
     - name: Run Unit Tests with Coverage
+      env:
+        PYTHONPATH: .
       run: |
         # Apply the rich console patch programmatically during testing if needed
         python -c "
