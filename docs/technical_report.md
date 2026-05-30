@@ -36,6 +36,9 @@ The framework's performance has been verified through training on local splits:
 | **Metal Nut** | 97.1% | 96.4% | **97.8%** |
 | **Mean** | **97.3%** | **96.7%** | **98.0%** |
 
+> [!NOTE]
+> **Scientific Benchmark Disclaimer**: The quantitative results above are trained and evaluated on programmatically generated local splits for the MVTec AD categories. Due to source URL 404 errors during direct programmatic dataset downloads, these scores reflect validation performance on high-fidelity synthetic splits and are not directly comparable to published full-dataset SOTA benchmarks (such as the 99.6% Dinomaly baseline). They are provided to verify pipeline integration, late-fusion BCE ensembling convergence, and top-to-bottom codebase reproducibility.
+
 Unit test coverage across core implemented modules is at **96%**, verified through automated CI checks.
 
 ### 5. Future Work
