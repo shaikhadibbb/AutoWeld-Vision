@@ -1,5 +1,12 @@
-import os
+# Streamlit Cloud SQLite3 override for Anomalib compatibility
 import sys
+try:
+    import pysqlite3
+    sys.modules['sqlite3'] = pysqlite3
+except ImportError:
+    pass
+
+import os
 from pathlib import Path
 from datetime import datetime
 import streamlit as st
