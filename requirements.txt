@@ -1,6 +1,8 @@
 streamlit>=1.30.0
 torch>=2.0.0
 torchvision>=0.15.0
+lightning>=2.1.0
+pytorch-lightning>=2.1.0
 anomalib==1.1.0
 matplotlib>=3.7.0
 pillow>=10.0.0
