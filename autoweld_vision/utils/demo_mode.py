@@ -12,7 +12,7 @@ from typing import Dict, Any
 
 def run_demo_inspection(image_path: str, vin: str = "UNKNOWN") -> Dict[str, Any]:
     """Runs a simulated demo inspection and generates a mock audit report."""
-    anomaly_score = 0.15
+    anomaly_score = 0.148
     decision = "OK"
     
     # Generate visual audit report

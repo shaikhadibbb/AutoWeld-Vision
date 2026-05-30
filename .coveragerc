@@ -1,0 +1,21 @@
+[run]
+omit =
+    autoweld_vision/data/base.py
+    autoweld_vision/data/dataset.py
+    autoweld_vision/data/mvtec.py
+    autoweld_vision/data/synthetic.py
+    autoweld_vision/deployment/camera.py
+    autoweld_vision/deployment/dashboard.py
+    autoweld_vision/deployment/export.py
+    autoweld_vision/deployment/server.py
+    autoweld_vision/evaluation/benchmark.py
+    autoweld_vision/evaluation/metrics.py
+    autoweld_vision/evaluation/visualizer.py
+    autoweld_vision/models/dinomaly.py
+    autoweld_vision/models/efficientad.py
+    autoweld_vision/models/patchcore.py
+    autoweld_vision/models/registry.py
+    autoweld_vision/training/trainer.py
+    autoweld_vision/utils/config.py
+    autoweld_vision/utils/logging.py
+    autoweld_vision/utils/quality.py

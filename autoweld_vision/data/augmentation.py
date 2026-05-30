@@ -23,7 +23,7 @@ class CutPaste:
     
     def __init__(
         self,
-        patch_ratio_bounds: Tuple[float, float] = (0.02, 0.15),
+        patch_ratio_bounds: Tuple[float, float] = (0.02, 0.16),
         aspect_ratio_bounds: Tuple[float, float] = (0.3, 3.3),
         color_jitter: bool = True,
         rotation_angle_bounds: Tuple[float, float] = (-45.0, 45.0)

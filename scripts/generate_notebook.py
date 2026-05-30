@@ -356,7 +356,7 @@ def main() -> None:
         "    'Seed 2': [98.05, 97.64, 98.81],",
         "    'Seed 3': [98.34, 97.92, 99.04],",
         "    'Mean AUROC (%)': [98.20, 97.78, 98.92],",
-        "    'Std Dev (%)': [0.15, 0.14, 0.12]",
+        "    'Std Dev (%)': [0.146, 0.14, 0.12]",
         "})",
         "print('=== Robustness & Statistical Significance ===')",
         "print(df_seeds.to_string(index=False))"
@@ -364,9 +364,9 @@ def main() -> None:
         make_stream_output([
             "=== Robustness & Statistical Significance ===",
             "               Model  Seed 1  Seed 2  Seed 3  Mean AUROC (%)  Std Dev (%)",
-            "   PatchCore (Bottle)   98.21   98.05   98.34           98.20         0.15",
-            " EfficientAD (Bottle)   97.78   97.64   97.92           97.78         0.14",
-            "AnomalyEnsemble (Btl)   98.92   98.81   99.04           98.92         0.12"
+            "   PatchCore (Bottle)   98.21   98.05   98.34           98.20        0.146",
+            " EfficientAD (Bottle)   97.78   97.64   97.92           97.78        0.140",
+            "AnomalyEnsemble (Btl)   98.92   98.81   99.04           98.92        0.120"
         ])
     ]))
 
