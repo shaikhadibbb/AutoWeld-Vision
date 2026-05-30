@@ -7,7 +7,7 @@ Unsupervised anomaly detection pipeline for real-time welding quality control an
 [![Build Status](https://img.shields.io/badge/Build-Passing-green.svg)](#)
 [![Audit Compliance](https://img.shields.io/badge/IATF_16949-Compliant_Logs-orange.svg)](#)
 [![Test Coverage](https://img.shields.io/badge/Coverage-96%25-green.svg)](#)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision-y8aftc5zdzpmpcxhleshdv.streamlit.app/)
 
 ### Why This Exists
 In automotive manufacturing, weld seam failure can compromise the structural integrity of a vehicle frame. Manual inspection is slow, tires the eyes of inspector teams, and misses microscopic fractures or gas porosity. AutoWeld-Vision runs a parallel unsupervised deep learning pipeline to catch defect candidates instantly on the production line, providing immediate feedback and archiving an unalterable audit log for manufacturing traceability.
@@ -148,7 +148,7 @@ Validation on public weld-specific datasets is actively ongoing:
 
 ### Live Demo
 We have deployed an interactive operator terminal where you can test the pipeline live without installing any local code:
-*   **Live App Link**: [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision.streamlit.app)
+*   **Live App Link**: [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision-y8aftc5zdzpmpcxhleshdv.streamlit.app/)
 
 <p align="center">
   <img src="demo/demo_run.gif" alt="Looping demonstration of the operator dashboard in action showing file upload, real-time inference, side-by-side quality visual mapping, and compliance download button" width="750"/>
