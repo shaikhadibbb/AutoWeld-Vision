@@ -339,6 +339,6 @@ This project is a personal academic research showcase developed to demonstrate p
 
 I am a computer vision researcher and AI/ML student preparing for master's studies in Germany. I specialize in bridging industrial anomaly detection with real-world quality control frameworks. Rather than relying on standard black-box machine learning libraries, I focus on ensembling coreset feature banks and optimizing score boundaries using sequential mathematical programming. My work is driven by a commitment to reproducible code, transparent performance benchmarks, and designing physical system architectures that translate theoretical AI performance into practical, auditable industrial value.
 
-*   **Email**: [adib.shaikh@tum.de](mailto:adib.shaikh@tum.de) | [shaikhadib.work@gmail.com](mailto:shaikhadib.work@gmail.com)
-*   **LinkedIn**: [linkedin.com/in/adib-shaikh-tum](https://linkedin.com/in/adib-shaikh-tum)
+*   **Email**: [adibazam456@gmail.com](mailto:adibazam456@gmail.com)
+*   **LinkedIn**: [linkedin.com/in/adib-azam-shaikh-348b01246](https://www.linkedin.com/in/adib-azam-shaikh-348b01246/)
 *   **GitHub**: [github.com/shaikhadibbb](https://github.com/shaikhadibbb)
