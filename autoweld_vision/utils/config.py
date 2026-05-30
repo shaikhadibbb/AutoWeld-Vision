@@ -1,6 +1,6 @@
-import yaml
 import os
 from omegaconf import OmegaConf
+
 
 class ConfigLoader:
     @staticmethod
@@ -8,7 +8,7 @@ class ConfigLoader:
         """Loads a config file using OmegaConf."""
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"Config file {config_path} not found.")
-        
+
         config = OmegaConf.load(config_path)
         return config
 

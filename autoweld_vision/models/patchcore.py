@@ -11,19 +11,24 @@ import torch
 from anomalib.models.image.patchcore import Patchcore
 from typing import List, Dict, Any
 
+
 @ModelRegistry.register("patchcore")
 class PatchCoreModel(BaseAnomalyModel):
     """
     PatchCore anomaly detection model wrapper.
-    
-    Uses memory bank feature extraction with coreset subsampling for 
+
+    Uses memory bank feature extraction with coreset subsampling for
     unsupervised industrial anomaly detection.
     """
-    
-    def __init__(self, backbone: str = 'wide_resnet50_2', layers: List[str] = ['layer2', 'layer3']) -> None:
+
+    def __init__(
+        self,
+        backbone: str = "wide_resnet50_2",
+        layers: List[str] = ["layer2", "layer3"],
+    ) -> None:
         """
         Initializes the PatchCore model.
-        
+
         Args:
             backbone: The CNN backbone architecture (default: 'wide_resnet50_2').
             layers: List of layers to extract features from (default: ['layer2', 'layer3']).
@@ -35,10 +40,10 @@ class PatchCoreModel(BaseAnomalyModel):
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
         Runs model forward pass.
-        
+
         Args:
             x: Input image tensor of shape (B, C, H, W).
-            
+
         Returns:
             A dictionary containing:
                 - 'anomaly_map': The pixel-level anomaly maps.

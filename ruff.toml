@@ -1,0 +1,18 @@
+# Ruff configuration file for AutoWeld-Vision
+
+# Exclude virtual environments and checkpoints
+exclude = [
+    ".git",
+    "venv",
+    ".venv",
+    "build",
+    "dist"
+]
+
+[lint]
+# Configure rule ignores:
+# E402: Module level import not at top of file (necessary for our environment/matplotlib monkeypatches at startup)
+# E741: Ambiguous variable name 'l' (present in template dataset code)
+# E722: Do not use bare except (present in Streamlit dashboard fallbacks)
+# F841: Local variable assigned but never used (present in template training callbacks and scripts)
+ignore = ["E402", "E741", "E722", "F841"]

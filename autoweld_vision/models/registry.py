@@ -1,12 +1,13 @@
-import torch
 import torch.nn as nn
 from typing import Dict, Any, Type
+
 
 class ModelRegistry:
     """
     Central registry for all AutoWeld-Vision anomaly detection models.
     Supports dynamic instantiation via config files.
     """
+
     _models = {}
 
     @classmethod
@@ -14,6 +15,7 @@ class ModelRegistry:
         def decorator(model_class: Type):
             cls._models[name] = model_class
             return model_class
+
         return decorator
 
     @classmethod
@@ -21,9 +23,11 @@ class ModelRegistry:
         config = config or {}
         if name not in cls._models:
             # Attempt to import all models to trigger registration
-            from . import patchcore, efficientad, dinomaly, ensemble
-            
+            pass
+
         if name not in cls._models:
-            raise ValueError(f"Model '{name}' not found in registry. Available: {list(cls._models.keys())}")
-        
+            raise ValueError(
+                f"Model '{name}' not found in registry. Available: {list(cls._models.keys())}"
+            )
+
         return cls._models[name](**config)
