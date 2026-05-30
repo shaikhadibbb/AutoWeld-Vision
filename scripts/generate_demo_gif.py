@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 
 def draw_rounded_rect(draw, coords, radius, color):

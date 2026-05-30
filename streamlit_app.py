@@ -10,9 +10,7 @@ except ImportError:
 
 import os
 from pathlib import Path
-from datetime import datetime
 import streamlit as st
-from PIL import Image
 
 # Ensure project root is in python path
 sys.path.append(str(Path(__file__).resolve().parent))
