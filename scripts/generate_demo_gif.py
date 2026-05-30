@@ -119,16 +119,17 @@ def generate_screenshots():
             
         frames.append(img)
     
-    # Save GIF
+    # Save GIFs
     Path("demo").mkdir(exist_ok=True)
-    frames[0].save(
-        "demo/demo_run.gif",
-        save_all=True,
-        append_images=frames[1:],
-        duration=1250, # 1.25s per frame = 5 seconds total for 4 frames
-        loop=0
-    )
-    print("✓ Successfully generated looping GIF at demo/demo_run.gif")
+    for gif_name in ["demo_run.gif", "demo_final.gif"]:
+        frames[0].save(
+            f"demo/{gif_name}",
+            save_all=True,
+            append_images=frames[1:],
+            duration=1250, # 1.25s per frame = 5 seconds total for 4 frames
+            loop=0
+        )
+    print("✓ Successfully generated looping GIFs at demo/demo_run.gif and demo/demo_final.gif")
 
 if __name__ == "__main__":
     generate_screenshots()

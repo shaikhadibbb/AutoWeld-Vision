@@ -146,7 +146,7 @@ Validation on public weld-specific datasets is actively ongoing:
 
 ## 6. Getting Started & Live Demo
 
-### Streamlit Community Cloud Live Demo
+### Live Demo
 We have deployed an interactive operator terminal where you can test the pipeline live without installing any local code:
 *   **Live App Link**: [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://autoweld-vision.streamlit.app)
 
@@ -327,7 +327,15 @@ This project is licensed under the **MIT License** — see [CONTRIBUTING.md](CON
 
 ---
 
-## 12. About the Author
+## 12. Community & Support
+
+This project is a personal academic research showcase developed to demonstrate practical machine learning systems for safety-critical automotive visual quality checks. We highly appreciate the support and feedback from the computer vision, industrial AI, and manufacturing engineering community!
+
+*   **GitHub Stars**: ⭐ **[0+ Stars]** — If you find this unsupervised ensembling pipeline, dynamic SLSQP weighting, or IATF-compliant visual auditing useful or interesting for your own projects, please click the **Star** button at the top right of this page!
+
+---
+
+## 13. About the Author
 
 I am a computer vision researcher and AI/ML student preparing for master's studies in Germany. I specialize in bridging industrial anomaly detection with real-world quality control frameworks. Rather than relying on standard black-box machine learning libraries, I focus on ensembling coreset feature banks and optimizing score boundaries using sequential mathematical programming. My work is driven by a commitment to reproducible code, transparent performance benchmarks, and designing physical system architectures that translate theoretical AI performance into practical, auditable industrial value.
 
