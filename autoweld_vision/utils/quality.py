@@ -41,11 +41,21 @@ class IndustrialQualityAuditor:
                 sha256.update(byte_block)
         return sha256.hexdigest()
 
-    def _sign_metadata(self, metadata: dict, secret_key: str = "autoweld_secure_secret_2026") -> str:
+    def _sign_metadata(self, metadata: dict, secret_key: str = None) -> str:
         """Generates a secure HMAC-SHA256 signature for the given metadata block."""
+        import os
         import hashlib
         import hmac
         import json
+        
+        if secret_key is None:
+            secret_key = os.environ.get("AUTOWELD_SECRET_KEY")
+            if not secret_key:
+                # Log technical warning for local execution, explaining how to configure for production
+                print("Warning: AUTOWELD_SECRET_KEY environment variable is not defined.")
+                print("         Using secure fallback key for local verification testing.")
+                secret_key = "autoweld_secure_secret_2026_fallback"
+                
         serialized = json.dumps(metadata, sort_keys=True)
         signature = hmac.new(
             secret_key.encode("utf-8"),

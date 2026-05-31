@@ -1,9 +1,9 @@
 """
 DINOv2-based Semantic Feature Outlier Model for AutoWeld-Vision.
 
-Implements a SOTA-style unsupervised anomaly detection baseline. It extracts 
-deep patch-level feature representations from a pre-trained backbone and identifies 
-anomalies by computing spatial outlier discrepancies within the image's feature map.
+Implements a mathematically corrected unsupervised anomaly detection baseline. 
+Computes spatial patch features against a cached global normal reference mean 
+compiled during training, rather than using the test image's own spatial mean.
 """
 
 import torch
@@ -20,10 +20,9 @@ class DinomalyModel(BaseAnomalyModel):
     """
     DINOv2 Semantic Feature Discrepancy Baseline.
     
-    Extracts deep semantic feature maps using a pretrained DINOv2 backbone 
-    (or falls back to a pretrained ResNet-18 when offline). Anomalies are 
-    detected by computing localized spatial outlier distances relative to the 
-    global feature mean of the normal weld regions.
+    Extracts deep semantic feature maps using a DINOv2 backbone or ResNet-18 fallback.
+    Detects anomalies by computing localized spatial outlier distances relative to the
+    cached global normal training feature mean.
     """
 
     def __init__(self, backbone_type: str = "resnet18", pretrained: bool = True) -> None:
@@ -31,11 +30,12 @@ class DinomalyModel(BaseAnomalyModel):
         Initializes the Dinomaly model.
 
         Args:
-            backbone_type: Core feature extractor architecture.
+            backbone_type: Core feature extractor architecture ('dinov2' or 'resnet18').
             pretrained: If True, loads pretrained ImageNet weights.
         """
         super().__init__()
         self.backbone_type = backbone_type
+        self.normal_mean: torch.Tensor = None
 
         # Attempt to load DINOv2 from PyTorch Hub, fall back to ResNet-18 if offline
         self.use_dino = False
@@ -69,43 +69,77 @@ class DinomalyModel(BaseAnomalyModel):
                 param.requires_grad = False
             print("Loaded pre-trained ResNet-18 feature extractor for Dinomaly.")
 
+    def fit(self, dataloader) -> None:
+        """
+        Trains Dinomaly by extracting features from all normal training samples
+        and computing the global normal reference feature mean.
+        """
+        self.eval()
+        device = next(self.parameters()).device
+
+        all_features = []
+        print("Extracting normal reference features for Dinomaly...")
+
+        with torch.no_grad():
+            for batch in dataloader:
+                images = batch["image"].to(device) if isinstance(batch, dict) else batch.to(device)
+                
+                if self.use_dino:
+                    x_resized = F.interpolate(images, size=(224, 224), mode="bilinear", align_corners=False)
+                    features_dict = self.backbone.forward_features(x_resized)
+                    patch_tokens = features_dict["x_norm_patchtokens"]
+                    b, n, c = patch_tokens.shape
+                    grid_h = grid_w = int(n ** 0.5)
+                    feat_map = patch_tokens.transpose(1, 2).reshape(b, c, grid_h, grid_w)
+                else:
+                    feat_map = self.features(images)
+                
+                # Take average across batch samples to preserve memory footprint
+                batch_mean = torch.mean(feat_map, dim=0, keepdim=True)
+                all_features.append(batch_mean.cpu())
+
+        # Compile the global normal average reference feature map: Shape (1, C, H_f, W_f)
+        self.normal_mean = torch.mean(torch.cat(all_features, dim=0), dim=0, keepdim=True).to(device)
+        print(f"✓ Compiled Dinomaly reference mean feature profile. Shape: {self.normal_mean.shape}")
+
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
-        Runs forward pass: extracts features and calculates patch discrepancy.
-
-        Args:
-            x: Input image tensor of shape (B, C, H, W).
-
-        Returns:
-            A dictionary containing:
-                - 'anomaly_map': The upsampled spatial discrepancy maps.
-                - 'score': The image-level maximum discrepancy scores.
+        Runs forward pass: extracts features and calculates patch outlier discrepancy.
         """
+        self.eval()
         batch_size = x.shape[0]
 
         if self.use_dino:
             # Resize to multiple of 14 for DINOv2
             x_resized = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
             with torch.no_grad():
-                # Extract features: (B, 256, 384) for 224x224 input
                 features_dict = self.backbone.forward_features(x_resized)
                 patch_tokens = features_dict["x_norm_patchtokens"]  # (B, 256, 384)
             
-            # Reshape patches to spatial grid: (B, 384, 16, 16)
             b, n, c = patch_tokens.shape
             grid_h = grid_w = int(n ** 0.5)
             feat_map = patch_tokens.transpose(1, 2).reshape(b, c, grid_h, grid_w)
         else:
-            # Extract spatial features using ResNet: (B, 128, H/8, W/8)
             with torch.no_grad():
                 feat_map = self.features(x)
 
         # Compute localized anomaly discrepancy map:
-        # Calculate the mean feature vector representing normal reference context
-        mean_vector = torch.mean(feat_map, dim=(2, 3), keepdim=True)  # (B, C, 1, 1)
-
-        # Compute spatial L2 discrepancy distance map
-        discrepancy = torch.norm(feat_map - mean_vector, p=2, dim=1, keepdim=True)  # (B, 1, H_f, W_f)
+        if self.normal_mean is not None:
+            # Match spatial dimensions if query sizes vary
+            if feat_map.shape[2:] != self.normal_mean.shape[2:]:
+                ref_mean = F.interpolate(
+                    self.normal_mean, size=feat_map.shape[2:], mode="bilinear", align_corners=False
+                )
+            else:
+                ref_mean = self.normal_mean
+            
+            # Compute spatial L2 discrepancy distance map against compiled normal baseline
+            discrepancy = torch.norm(feat_map - ref_mean, p=2, dim=1, keepdim=True)
+        else:
+            # Fallback to query spatial mean if not fitted yet (with standard warning)
+            print("Warning: Dinomaly has not been fitted. Falling back to internal query mean.")
+            mean_vector = torch.mean(feat_map, dim=(2, 3), keepdim=True)
+            discrepancy = torch.norm(feat_map - mean_vector, p=2, dim=1, keepdim=True)
 
         # Upsample anomaly map back to original input resolution
         anomaly_map = F.interpolate(
@@ -118,7 +152,6 @@ class DinomalyModel(BaseAnomalyModel):
         # Calculate image-level score as peak anomaly intensity
         score = anomaly_map.view(batch_size, -1).max(dim=1)[0].unsqueeze(1)
 
-        # Standardize score boundaries to a clean range
         return {"anomaly_map": anomaly_map, "score": score}
 
 

@@ -25,28 +25,29 @@ class SyntheticAnomalyGenerator:
     @staticmethod
     def apply_cutpaste(
         image: np.ndarray, patch_size_range: Tuple[int, int] = (10, 40)
-    ) -> np.ndarray:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Implements CutPaste augmentation: cuts a normal patch and pastes it elsewhere."""
-        h, w, c = image.shape
+        img_copy = image.copy()
+        h, w, c = img_copy.shape
         ps = random.randint(*patch_size_range)
 
         # Randomly select a patch
         from_y, from_x = random.randint(0, h - ps), random.randint(0, w - ps)
-        patch = image[from_y : from_y + ps, from_x : from_x + ps].copy()
+        patch = img_copy[from_y : from_y + ps, from_x : from_x + ps].copy()
 
         # Color jitter the patch to make it anomalous
         patch = cv2.convertScaleAbs(patch, alpha=1.2, beta=10)
 
         # Paste it to a new location
         to_y, to_x = random.randint(0, h - ps), random.randint(0, w - ps)
-        image[to_y : to_y + ps, to_x : to_x + ps] = patch
+        img_copy[to_y : to_y + ps, to_x : to_x + ps] = patch
 
         mask = np.zeros((h, w), dtype=np.uint8)
         mask[to_y : to_y + ps, to_x : to_x + ps] = 1
-        return image, mask
+        return img_copy, mask
 
     @staticmethod
-    def simulate_porosity(image: np.ndarray, num_voids: int = 5) -> np.ndarray:
+    def simulate_porosity(image: np.ndarray, num_voids: int = 5) -> Tuple[np.ndarray, np.ndarray]:
         """Simulates gas pockets (porosity) using dark elliptical voids."""
         h, w, _ = image.shape
         mask = np.zeros((h, w), dtype=np.uint8)

@@ -2,53 +2,83 @@
 Late Fusion Ensemble and Defect Gating for Industrial Anomaly Detection.
 
 This module implements AnomalyEnsemble which fuses the anomaly scores and anomaly maps
-from PatchCore and Student-Teacher models. The score fusion weights are learned 
-programmatically by minimizing binary cross-entropy validation loss on validation splits.
+from PatchCore and Student-Teacher models. The score fusion weights are learned
+programmatically by minimizing binary cross-entropy loss on Platt-calibrated validation splits.
 Includes DefectRouter which routes defects using spatial geometry.
 """
 
 import torch
 import torch.nn as nn
-from typing import Dict, Any
+from typing import Dict, Any, Union
 import numpy as np
 from scipy.optimize import minimize
 from .base import BaseAnomalyModel
 
 
-class AnomalyNormalizer:
+class PlattCalibrator:
     """
-    Fits and normalizes anomaly scores to [0, 1] using min-max scaling
-    learned from validation/calibration sets.
+    Fits and applies Platt Scaling (Logistic Calibration) to map raw, uncalibrated
+    distance-based anomaly scores into statistically sound probabilities in [0, 1].
+    
+    Fits the model P(y=1 | S) = 1 / (1 + exp(A * S + B)) using validation binary labels.
     """
+
     def __init__(self) -> None:
-        self.min_val: float = 0.0
-        self.max_val: float = 1.0
+        self.A: float = -1.0
+        self.B: float = 0.0
         self.is_fitted: bool = False
 
-    def fit(self, scores: np.ndarray) -> None:
-        """Fits min and max values on validation scores."""
+    def fit(self, scores: np.ndarray, labels: np.ndarray) -> None:
+        """Fits calibration parameters A and B by maximizing Bernoulli log-likelihood."""
         if len(scores) == 0:
             return
-        self.min_val = float(np.min(scores))
-        self.max_val = float(np.max(scores))
-        if self.max_val == self.min_val:
-            self.max_val += 1e-8
-        self.is_fitted = True
 
-    def normalize(self, scores: Any) -> Any:
-        """Normalizes scores (numpy array or torch tensor) to [0, 1]."""
-        if isinstance(scores, torch.Tensor):
-            return torch.clamp(
-                (scores - self.min_val) / (self.max_val - self.min_val + 1e-8),
-                0.0,
-                1.0,
-            )
+        def neg_log_likelihood(params: np.ndarray) -> float:
+            A, B = params
+            logits = A * scores + B
+            
+            # Safe cross-entropy implementation to avoid numerical underflow/overflow
+            loss = np.zeros_like(scores, dtype=float)
+            pos_mask = logits >= 0
+            neg_mask = ~pos_mask
+            
+            # y * log(1 + e^-logit) + (1 - y) * (logit + log(1 + e^-logit))
+            loss[pos_mask] = labels[pos_mask] * np.log1p(np.exp(-logits[pos_mask])) + \
+                             (1.0 - labels[pos_mask]) * (logits[pos_mask] + np.log1p(np.exp(-logits[pos_mask])))
+            
+            # y * (-logit + log(1 + e^logit)) + (1 - y) * log(1 + e^logit)
+            loss[neg_mask] = labels[neg_mask] * (-logits[neg_mask] + np.log1p(np.exp(logits[neg_mask]))) + \
+                             (1.0 - labels[neg_mask]) * np.log1p(np.exp(logits[neg_mask]))
+            
+            return float(np.mean(loss))
+
+        # Initialize parameters: negative correlation expected between score and class logit
+        initial_params = np.array([-1.0, float(np.mean(scores))])
+        res = minimize(neg_log_likelihood, initial_params, method="Nelder-Mead")
+
+        if res.success:
+            self.A, self.B = res.x
+            self.is_fitted = True
+            print(f"✓ Platt calibration fitted! A: {self.A:.4f}, B: {self.B:.4f}")
         else:
-            return np.clip(
-                (scores - self.min_val) / (self.max_val - self.min_val + 1e-8),
-                0.0,
-                1.0,
-            )
+            # Fallback estimation based on class separation statistics
+            self.A = -1.0 / (np.std(scores) + 1e-8)
+            self.B = -self.A * np.mean(scores)
+            self.is_fitted = True
+
+    def calibrate(self, scores: Any) -> Any:
+        """Applies fitted logistic calibration to scores (Tensor or Array) returning values in [0, 1]."""
+        if not self.is_fitted:
+            # Simple soft sigmoid fallback if calibration is not executed yet
+            if isinstance(scores, torch.Tensor):
+                return torch.sigmoid(scores - 1.0)
+            else:
+                return 1.0 / (1.0 + np.exp(-(scores - 1.0)))
+
+        if isinstance(scores, torch.Tensor):
+            return 1.0 / (1.0 + torch.exp(self.A * scores + self.B))
+        else:
+            return 1.0 / (1.0 + np.exp(self.A * scores + self.B))
 
 
 class AnomalyEnsemble(BaseAnomalyModel):
@@ -56,7 +86,8 @@ class AnomalyEnsemble(BaseAnomalyModel):
     Weighted Late Fusion Ensemble for Anomaly Detection.
 
     Combines anomaly scores and anomaly maps from multiple models (e.g. PatchCore and EfficientAD).
-    The weights are learned dynamically by minimizing validation binary cross-entropy loss.
+    The weights are learned dynamically by minimizing validation Binary Cross Entropy loss 
+    computed over Platt-calibrated probability spaces.
     """
 
     def __init__(self, models: Dict[str, nn.Module]) -> None:
@@ -73,7 +104,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
         self._learned_weights: Dict[str, float] = {
             name: 1.0 / len(models) for name in models.keys()
         }
-        self.normalizers = {name: AnomalyNormalizer() for name in models.keys()}
+        self.calibrators = {name: PlattCalibrator() for name in models.keys()}
 
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
@@ -84,8 +115,8 @@ class AnomalyEnsemble(BaseAnomalyModel):
 
         Returns:
             A dictionary containing:
-                - 'score': The final fused anomaly score (float tensor).
-                - 'anomaly_map': The fused pixel-level anomaly map.
+                - 'score': The final fused calibrated anomaly probability (float tensor).
+                - 'anomaly_map': The fused probability-calibrated anomaly map.
                 - 'model_scores': Dictionary of individual model scores.
         """
         results: Dict[str, Dict[str, Any]] = {}
@@ -98,17 +129,17 @@ class AnomalyEnsemble(BaseAnomalyModel):
             for name, res in results.items()
         }
 
-        # Weighted fusion of scores
+        # Weighted fusion of calibrated scores
         fused_score = torch.zeros_like(list(scores.values())[0])
         for name, score in scores.items():
-            norm_score = self.normalizers[name].normalize(score)
-            fused_score += self._learned_weights[name] * norm_score
+            cal_score = self.calibrators[name].calibrate(score)
+            fused_score += self._learned_weights[name] * cal_score
 
-        # Weighted fusion of anomaly maps
+        # Weighted fusion of calibrated anomaly maps
         fused_map = torch.zeros_like(list(results.values())[0]["anomaly_map"])
         for name, res in results.items():
-            norm_map = self.normalizers[name].normalize(res["anomaly_map"])
-            fused_map += self._learned_weights[name] * norm_map
+            cal_map = self.calibrators[name].calibrate(res["anomaly_map"])
+            fused_map += self._learned_weights[name] * cal_map
 
         return {"score": fused_score, "anomaly_map": fused_map, "model_scores": scores}
 
@@ -120,6 +151,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
     ) -> None:
         """
         Optimizes score fusion weights by minimizing Binary Cross Entropy loss on a validation set.
+        Calibrates model scores via Platt scaling to ensure statistical validity of probability inputs.
 
         Uses scipy.optimize.minimize to find weights w1, w2 that minimize BCE.
 
@@ -130,20 +162,21 @@ class AnomalyEnsemble(BaseAnomalyModel):
         """
         model_names = list(self.models.keys())
         if len(model_names) >= 2:
-            self.normalizers[model_names[0]].fit(val_scores_m1)
-            self.normalizers[model_names[1]].fit(val_scores_m2)
+            self.calibrators[model_names[0]].fit(val_scores_m1, val_labels)
+            self.calibrators[model_names[1]].fit(val_scores_m2, val_labels)
             
-            norm_val_m1 = self.normalizers[model_names[0]].normalize(val_scores_m1)
-            norm_val_m2 = self.normalizers[model_names[1]].normalize(val_scores_m2)
+            cal_val_m1 = self.calibrators[model_names[0]].calibrate(val_scores_m1)
+            cal_val_m2 = self.calibrators[model_names[1]].calibrate(val_scores_m2)
         else:
-            norm_val_m1 = val_scores_m1
-            norm_val_m2 = val_scores_m2
+            cal_val_m1 = val_scores_m1
+            cal_val_m2 = val_scores_m2
 
         def bce_loss(weights: np.ndarray) -> float:
             w1, w2 = weights
-            fused = w1 * norm_val_m1 + w2 * norm_val_m2
+            fused_prob = w1 * cal_val_m1 + w2 * cal_val_m2
+            
             # Clip probabilities to avoid log(0)
-            probs = np.clip(fused, 1e-7, 1.0 - 1e-7)
+            probs = np.clip(fused_prob, 1e-7, 1.0 - 1e-7)
             loss = -np.mean(
                 val_labels * np.log(probs) + (1.0 - val_labels) * np.log(1.0 - probs)
             )
@@ -176,7 +209,7 @@ class DefectRouter:
     """
     Defect-Type-Specific Routing Gating Mechanism.
 
-    Uses a deterministic geometric shape and area profiling classifier to route 
+    Uses a deterministic geometric shape and area profiling classifier to route
     defects to specialized downstream models based on structural morphology.
     """
 

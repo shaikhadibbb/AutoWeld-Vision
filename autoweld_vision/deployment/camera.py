@@ -75,10 +75,26 @@ class CameraInspector:
             cv2.destroyAllWindows()
 
     def _send_plc_signal(self, is_defective: bool):
-        """Simulates sending a signal to a welding robot PLC."""
-        if is_defective:
-            # print("[PLC] REJECT SIGNAL SENT")
-            pass
-        else:
-            # print("[PLC] PASS SIGNAL SENT")
+        """Sends a physical quality control trigger (binary byte signal) to a PLC industrial controller."""
+        import socket
+        
+        # Localhost port representing Modbus/socket simulation
+        plc_ip = "127.0.0.1"
+        plc_port = 5002
+        
+        # Binary signal payload: 0x01 for defect (reject), 0x00 for normal (pass)
+        signal = b"\x01" if is_defective else b"\x00"
+        
+        action = "REJECT" if is_defective else "PASS"
+        print(f"[PLC Link] Emitting binary decision state: {action} (payload: {signal.hex()})")
+        
+        try:
+            # Emit signal via TCP stream with tight real-time timeout (50ms) to prevent inference stalls
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.05)
+                s.connect((plc_ip, plc_port))
+                s.sendall(signal)
+                print(f"✓ Transmitted quality signal to PLC at {plc_ip}:{plc_port}")
+        except (socket.timeout, ConnectionRefusedError):
+            # Graceful simulation fallback: normal when operating offline without live PLC receivers
             pass

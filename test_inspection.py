@@ -38,13 +38,13 @@ def tostring_rgb_patched(self):
 
 FigureCanvasAgg.tostring_rgb = tostring_rgb_patched
 
-from anomalib.models import Patchcore
+from autoweld_vision.models.patchcore import PatchCoreModel
 from autoweld_vision.utils.demo_mode import run_demo_inspection
 
 
-def load_inspection_model(category: str = "bottle") -> Patchcore:
+def load_inspection_model(category: str = "bottle") -> PatchCoreModel:
     """Loads PatchCore model and loads trained weights if available."""
-    model = Patchcore()
+    model = PatchCoreModel()
     weights_path = f"weights/patchcore_{category}.pt"
     if os.path.exists(weights_path):
         model.load_state_dict(torch.load(weights_path, map_location="cpu"))
