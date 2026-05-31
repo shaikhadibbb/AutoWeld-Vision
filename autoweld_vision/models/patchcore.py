@@ -19,7 +19,7 @@ from .registry import ModelRegistry
 class PatchCoreModel(BaseAnomalyModel):
     """
     Scratch-built PyTorch PatchCore Anomaly Detection Model.
-    
+
     Extracts intermediate features from a pre-trained backbone, aggregate neighborhood
     context using local pooling, compiles a coreset memory bank via greedy subsampling,
     and detects anomalies using scaled K-nearest neighbor distances.
@@ -68,9 +68,11 @@ class PatchCoreModel(BaseAnomalyModel):
 
     def _register_hooks(self) -> None:
         """Registers forward hooks on target intermediate layer activations."""
+
         def get_activation(name: str):
             def hook(model, input, output):
                 self.features[name] = output
+
             return hook
 
         for name in self.layers:
@@ -78,7 +80,9 @@ class PatchCoreModel(BaseAnomalyModel):
             h = layer.register_forward_hook(get_activation(name))
             self.hooks.append(h)
 
-    def _extract_features(self, x: torch.Tensor) -> tuple[torch.Tensor, tuple[int, int, int]]:
+    def _extract_features(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, tuple[int, int, int]]:
         """
         Runs backbone, extracts target layer activations, applies local aggregation
         pooling, and reshapes patches into a unified channel representation.
@@ -125,20 +129,32 @@ class PatchCoreModel(BaseAnomalyModel):
         with torch.no_grad():
             for batch in dataloader:
                 # Dataloader can return dict or raw tensor
-                images = batch["image"].to(device) if isinstance(batch, dict) else batch.to(device)
+                images = (
+                    batch["image"].to(device)
+                    if isinstance(batch, dict)
+                    else batch.to(device)
+                )
                 patches, _ = self._extract_features(images)
                 all_patches.append(patches.cpu())
 
         # Compile memory bank patches: shape (N_patches, C_total)
         memory_bank_raw = torch.cat(all_patches, dim=0)
-        print(f"Memory bank patches gathered: {memory_bank_raw.shape[0]}. Running greedy coreset selection...")
+        print(
+            f"Memory bank patches gathered: {memory_bank_raw.shape[0]}. Running greedy coreset selection..."
+        )
 
         # Subsample to a highly representative subset (capped at 1500 elements for speed)
-        coreset = self._greedy_coreset_selection(memory_bank_raw, self.coreset_sampling_ratio)
+        coreset = self._greedy_coreset_selection(
+            memory_bank_raw, self.coreset_sampling_ratio
+        )
         self.memory_bank = coreset.to(device)
-        print(f"✓ Coreset memory bank compiled successfully! Selected patches: {self.memory_bank.shape[0]}")
+        print(
+            f"✓ Coreset memory bank compiled successfully! Selected patches: {self.memory_bank.shape[0]}"
+        )
 
-    def _greedy_coreset_selection(self, patches: torch.Tensor, ratio: float) -> torch.Tensor:
+    def _greedy_coreset_selection(
+        self, patches: torch.Tensor, ratio: float
+    ) -> torch.Tensor:
         """Greedy coreset selection selects representative vectors using minimax distance."""
         num_patches = patches.shape[0]
         n_select = max(10, int(num_patches * ratio))
@@ -176,7 +192,9 @@ class PatchCoreModel(BaseAnomalyModel):
 
         if self.memory_bank is None or self.memory_bank.numel() == 0:
             # If model state loaded but memory_bank empty, load random/default mock or raise error
-            raise RuntimeError("PatchCore coreset memory bank has not been fitted/trained yet!")
+            raise RuntimeError(
+                "PatchCore coreset memory bank has not been fitted/trained yet!"
+            )
 
         # Extract features: patches has shape (B * H_f * W_f, C)
         patches, (b, h_f, w_f) = self._extract_features(x)
@@ -198,7 +216,10 @@ class PatchCoreModel(BaseAnomalyModel):
 
         # Upsample anomaly map to input image resolution
         anomaly_map = F.interpolate(
-            anomaly_map, size=(x.shape[2], x.shape[3]), mode="bilinear", align_corners=False
+            anomaly_map,
+            size=(x.shape[2], x.shape[3]),
+            mode="bilinear",
+            align_corners=False,
         )
 
         # Compute image-level anomaly score using scaled KNN distance formulation

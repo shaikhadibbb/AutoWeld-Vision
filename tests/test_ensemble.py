@@ -31,7 +31,7 @@ def test_ensemble_bounds_and_monotonicity() -> None:
 
     ensemble = AnomalyEnsemble({"m1": m1, "m2": m2})
     ensemble._learned_weights = {"m1": 0.4, "m2": 0.6}
-    
+
     # Mock calibration to act as identity mapping for direct weight combination check
     ensemble.calibrators["m1"].calibrate = lambda s: s
     ensemble.calibrators["m2"].calibrate = lambda s: s
@@ -52,7 +52,7 @@ def test_ensemble_bounds_and_monotonicity() -> None:
     ensemble_higher._learned_weights = {"m1": 0.4, "m2": 0.6}
     ensemble_higher.calibrators["m1"].calibrate = lambda s: s
     ensemble_higher.calibrators["m2"].calibrate = lambda s: s
-    
+
     out_higher = ensemble_higher(x)
     assert out_higher["score"].item() > fused_score
 

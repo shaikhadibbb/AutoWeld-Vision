@@ -105,10 +105,13 @@ def run_real_inspection(
 
     # 4. Generate side-by-side IATF 16949 Audit Report using IndustrialQualityAuditor
     from autoweld_vision.utils.quality import IndustrialQualityAuditor
+
     auditor = IndustrialQualityAuditor(output_dir="audit_logs")
     img_np = np.array(img)
-    
-    report_path = auditor.save_audit_report(vin, img_np, anomaly_map, anomaly_score, decision)
+
+    report_path = auditor.save_audit_report(
+        vin, img_np, anomaly_map, anomaly_score, decision
+    )
 
     return {
         "vin": vin,

@@ -19,7 +19,7 @@ class PlattCalibrator:
     """
     Fits and applies Platt Scaling (Logistic Calibration) to map raw, uncalibrated
     distance-based anomaly scores into statistically sound probabilities in [0, 1].
-    
+
     Fits the model P(y=1 | S) = 1 / (1 + exp(A * S + B)) using validation binary labels.
     """
 
@@ -36,20 +36,22 @@ class PlattCalibrator:
         def neg_log_likelihood(params: np.ndarray) -> float:
             A, B = params
             logits = A * scores + B
-            
+
             # Safe cross-entropy implementation to avoid numerical underflow/overflow
             loss = np.zeros_like(scores, dtype=float)
             pos_mask = logits >= 0
             neg_mask = ~pos_mask
-            
+
             # y * log(1 + e^-logit) + (1 - y) * (logit + log(1 + e^-logit))
-            loss[pos_mask] = labels[pos_mask] * np.log1p(np.exp(-logits[pos_mask])) + \
-                             (1.0 - labels[pos_mask]) * (logits[pos_mask] + np.log1p(np.exp(-logits[pos_mask])))
-            
+            loss[pos_mask] = labels[pos_mask] * np.log1p(np.exp(-logits[pos_mask])) + (
+                1.0 - labels[pos_mask]
+            ) * (logits[pos_mask] + np.log1p(np.exp(-logits[pos_mask])))
+
             # y * (-logit + log(1 + e^logit)) + (1 - y) * log(1 + e^logit)
-            loss[neg_mask] = labels[neg_mask] * (-logits[neg_mask] + np.log1p(np.exp(logits[neg_mask]))) + \
-                             (1.0 - labels[neg_mask]) * np.log1p(np.exp(logits[neg_mask]))
-            
+            loss[neg_mask] = labels[neg_mask] * (
+                -logits[neg_mask] + np.log1p(np.exp(logits[neg_mask]))
+            ) + (1.0 - labels[neg_mask]) * np.log1p(np.exp(logits[neg_mask]))
+
             return float(np.mean(loss))
 
         # Initialize parameters: negative correlation expected between score and class logit
@@ -86,7 +88,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
     Weighted Late Fusion Ensemble for Anomaly Detection.
 
     Combines anomaly scores and anomaly maps from multiple models (e.g. PatchCore and EfficientAD).
-    The weights are learned dynamically by minimizing validation Binary Cross Entropy loss 
+    The weights are learned dynamically by minimizing validation Binary Cross Entropy loss
     computed over Platt-calibrated probability spaces.
     """
 
@@ -125,7 +127,11 @@ class AnomalyEnsemble(BaseAnomalyModel):
 
         # Extract individual scores
         scores: Dict[str, torch.Tensor] = {
-            name: (res.get("pred_score", res.get("score")) if isinstance(res, dict) else res)
+            name: (
+                res.get("pred_score", res.get("score"))
+                if isinstance(res, dict)
+                else res
+            )
             for name, res in results.items()
         }
 
@@ -164,7 +170,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
         if len(model_names) >= 2:
             self.calibrators[model_names[0]].fit(val_scores_m1, val_labels)
             self.calibrators[model_names[1]].fit(val_scores_m2, val_labels)
-            
+
             cal_val_m1 = self.calibrators[model_names[0]].calibrate(val_scores_m1)
             cal_val_m2 = self.calibrators[model_names[1]].calibrate(val_scores_m2)
         else:
@@ -174,7 +180,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
         def bce_loss(weights: np.ndarray) -> float:
             w1, w2 = weights
             fused_prob = w1 * cal_val_m1 + w2 * cal_val_m2
-            
+
             # Clip probabilities to avoid log(0)
             probs = np.clip(fused_prob, 1e-7, 1.0 - 1e-7)
             loss = -np.mean(

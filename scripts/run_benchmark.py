@@ -3,7 +3,7 @@
 Reproducible Training and Benchmarking Pipeline for AutoWeld-Vision.
 
 This script trains PatchCore on bottle, cable, and metal_nut, and EfficientAD
-on bottle. It evaluates the models, extracts real validation scores, optimizes 
+on bottle. It evaluates the models, extracts real validation scores, optimizes
 the AnomalyEnsemble using SLSQP, and writes publication-quality benchmarks.
 """
 
@@ -88,9 +88,12 @@ def main() -> None:
 
     # Load and verify Config system to eliminate orphaned modules
     from autoweld_vision.utils.config import ConfigLoader
+
     try:
         config = ConfigLoader.load_config("configs/config.yaml")
-        print(f"✓ Successfully verified YAML config loader (epochs={config.train.epochs})")
+        print(
+            f"✓ Successfully verified YAML config loader (epochs={config.train.epochs})"
+        )
     except Exception as e:
         print(f"⚠️ YAML config loader verification skipped: {e}")
 
@@ -146,8 +149,12 @@ def main() -> None:
                 masks = batch.get("mask", None)
 
                 outputs = model(images)
-                
-                scores_squeezed = outputs["score"].squeeze(1).tolist() if outputs["score"].dim() > 1 else [outputs["score"].item()]
+
+                scores_squeezed = (
+                    outputs["score"].squeeze(1).tolist()
+                    if outputs["score"].dim() > 1
+                    else [outputs["score"].item()]
+                )
                 all_scores.extend(scores_squeezed)
                 all_labels.extend(labels.tolist())
 
@@ -156,7 +163,9 @@ def main() -> None:
                     masks_np = masks.cpu().numpy()
                     for amap, mask in zip(anomaly_maps, masks_np):
                         all_pixel_scores.extend(amap.flatten()[::16].tolist())
-                        all_pixel_labels.extend((mask.flatten()[::16] > 0.5).astype(int).tolist())
+                        all_pixel_labels.extend(
+                            (mask.flatten()[::16] > 0.5).astype(int).tolist()
+                        )
 
         try:
             img_auroc = float(roc_auc_score(all_labels, all_scores))
@@ -214,24 +223,27 @@ def main() -> None:
     model_eff = EfficientADModel().to(device)
     optimizer = torch.optim.Adam(
         list(model_eff.student.parameters()) + list(model_eff.autoencoder.parameters()),
-        lr=1e-3
+        lr=1e-3,
     )
     train_loader = datamodule_bottle.train_dataloader()
 
     model_eff.train()
     from autoweld_vision.data.synthetic import SyntheticAnomalyGenerator
+
     for epoch in range(3):
         epoch_loss = 0.0
         for batch in train_loader:
             images = batch["image"].to(device)
-            
+
             # Apply SyntheticAnomalyGenerator to 20% of batches to enrich robust feature learning
             if np.random.uniform(0, 1) < 0.2:
                 # Convert the first image in batch to simulate welding porosity
-                img_np = (images[0].permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
+                img_np = (images[0].permute(1, 2, 0).cpu().numpy() * 255).astype(
+                    np.uint8
+                )
                 sim_img, sim_mask = SyntheticAnomalyGenerator.simulate_porosity(img_np)
                 # print("✓ Successfully ran SyntheticAnomalyGenerator on training batch!")
-                
+
             optimizer.zero_grad()
             outputs = model_eff(images)
             loss = outputs["anomaly_map"].mean()
@@ -258,11 +270,15 @@ def main() -> None:
             images = batch["image"].to(device)
             labels = batch["label"]
             masks = batch.get("mask", None)
-            
+
             outputs = model_eff(images)
-            
+
             # Squeeze scores properly
-            scores_squeezed = outputs["score"].squeeze(1).tolist() if outputs["score"].dim() > 1 else [outputs["score"].item()]
+            scores_squeezed = (
+                outputs["score"].squeeze(1).tolist()
+                if outputs["score"].dim() > 1
+                else [outputs["score"].item()]
+            )
             all_scores.extend(scores_squeezed)
             all_labels.extend(labels.tolist())
 
@@ -273,7 +289,9 @@ def main() -> None:
                 for amap, mask in zip(anomaly_maps, masks_np):
                     # Subsample every 16th pixel to preserve memory and run fast
                     all_pixel_scores.extend(amap.flatten()[::16].tolist())
-                    all_pixel_labels.extend((mask.flatten()[::16] > 0.5).astype(int).tolist())
+                    all_pixel_labels.extend(
+                        (mask.flatten()[::16] > 0.5).astype(int).tolist()
+                    )
 
     try:
         img_auroc_eff = float(roc_auc_score(all_labels, all_scores))
@@ -307,11 +325,15 @@ def main() -> None:
     }
 
     # 3. Optimize AnomalyEnsemble weights on bottle category using REAL validation scores
-    print("\n--- Optimizing AnomalyEnsemble on bottle category using REAL test splits ---")
-    
+    print(
+        "\n--- Optimizing AnomalyEnsemble on bottle category using REAL test splits ---"
+    )
+
     # Load scratch PatchCore model for ensembling
     model_pc = PatchCoreModel().to(device)
-    model_pc.load_state_dict(torch.load("weights/patchcore_bottle.pt", map_location=device))
+    model_pc.load_state_dict(
+        torch.load("weights/patchcore_bottle.pt", map_location=device)
+    )
     model_pc.eval()
 
     val_scores_p_list = []
@@ -332,8 +354,16 @@ def main() -> None:
             score_e = pred_e.get("pred_score", pred_e.get("score"))
 
             # Extract list scores
-            val_scores_p_list.extend(score_p.cpu().squeeze().tolist() if score_p.dim() > 0 else [score_p.cpu().item()])
-            val_scores_e_list.extend(score_e.cpu().squeeze().tolist() if score_e.dim() > 0 else [score_e.cpu().item()])
+            val_scores_p_list.extend(
+                score_p.cpu().squeeze().tolist()
+                if score_p.dim() > 0
+                else [score_p.cpu().item()]
+            )
+            val_scores_e_list.extend(
+                score_e.cpu().squeeze().tolist()
+                if score_e.dim() > 0
+                else [score_e.cpu().item()]
+            )
             val_labels_list.extend(labels.tolist())
 
     val_scores_p = np.array(val_scores_p_list)
@@ -346,16 +376,18 @@ def main() -> None:
 
     # Compute real ensembled Image AUROC
     fused_scores = ensemble.w1 * val_scores_p + ensemble.w2 * val_scores_e
-    
+
     def sigmoid(v: np.ndarray) -> np.ndarray:
         return 1.0 / (1.0 + np.exp(-v))
-        
+
     fused_probs = sigmoid(fused_scores)
 
     try:
         ensembled_img_auroc = float(roc_auc_score(val_labels, fused_probs))
     except Exception:
-        ensembled_img_auroc = max(patchcore_results["bottle"]["image_auroc"], img_auroc_eff)
+        ensembled_img_auroc = max(
+            patchcore_results["bottle"]["image_auroc"], img_auroc_eff
+        )
 
     # Save the consolidated benchmarks
     final_output_path = os.path.join(args.output, "benchmark.json")
@@ -369,7 +401,10 @@ def main() -> None:
             "results": {
                 "bottle": {
                     "image_auroc": round(ensembled_img_auroc, 4),
-                    "pixel_auroc": round(max(patchcore_results["bottle"]["pixel_auroc"], pix_auroc_eff), 4),
+                    "pixel_auroc": round(
+                        max(patchcore_results["bottle"]["pixel_auroc"], pix_auroc_eff),
+                        4,
+                    ),
                 }
             },
             "ensemble_weights": {"patchcore": ensemble.w1, "efficientad": ensemble.w2},

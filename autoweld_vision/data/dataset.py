@@ -32,25 +32,34 @@ class AutoWeldDataset(Dataset):
     def _load_metadata(self):
         import os
         import glob
+
         if not os.path.exists(self.root_dir):
-            print(f"Warning: AutoWeldDataset root directory '{self.root_dir}' not found.")
+            print(
+                f"Warning: AutoWeldDataset root directory '{self.root_dir}' not found."
+            )
             return
 
         image_extensions = ["*.png", "*.jpg", "*.jpeg", "*.PNG", "*.JPG", "*.JPEG"]
-        
+
         # Locate search split directory or search directly in root
         split_dir = os.path.join(self.root_dir, self.mode)
         search_dir = split_dir if os.path.exists(split_dir) else self.root_dir
 
         for ext in image_extensions:
-            for img_path in sorted(glob.glob(os.path.join(search_dir, "**", ext), recursive=True)):
+            for img_path in sorted(
+                glob.glob(os.path.join(search_dir, "**", ext), recursive=True)
+            ):
                 if "ground_truth" in img_path or "_mask" in img_path:
                     continue
 
                 self.image_paths.append(img_path)
-                
+
                 path_lower = img_path.lower()
-                if self.mode == "train" or "good" in path_lower or "normal" in path_lower:
+                if (
+                    self.mode == "train"
+                    or "good" in path_lower
+                    or "normal" in path_lower
+                ):
                     self.labels.append(0)
                     self.masks.append(None)
                 else:
@@ -60,8 +69,10 @@ class AutoWeldDataset(Dataset):
                     base_name = os.path.splitext(os.path.basename(img_path))[0]
                     parent_dir = os.path.dirname(dir_name)
                     defect_type = os.path.basename(dir_name)
-                    
-                    mask_path = os.path.join(parent_dir, "ground_truth", defect_type, f"{base_name}_mask.png")
+
+                    mask_path = os.path.join(
+                        parent_dir, "ground_truth", defect_type, f"{base_name}_mask.png"
+                    )
                     if os.path.exists(mask_path):
                         self.masks.append(mask_path)
                     else:

@@ -2,8 +2,8 @@
 Student-Teacher Feature Distillation Model (EfficientAD Paradigm) for AutoWeld-Vision.
 
 Implements an unsupervised student-teacher anomaly detection model.
-A frozen pre-trained "Teacher" network extracts semantic features from ImageNet, 
-and an active "Student" network is trained to replicate these features on normal data. 
+A frozen pre-trained "Teacher" network extracts semantic features from ImageNet,
+and an active "Student" network is trained to replicate these features on normal data.
 Anomalies are detected via local representation discrepancy (L2 feature difference).
 """
 
@@ -48,6 +48,7 @@ class SlicedResNet(nn.Module):
 
 class FeatureAutoEncoder(nn.Module):
     """AutoEncoder that reconstructs teacher intermediate features for anomaly profiling."""
+
     def __init__(self, channels: int = 128) -> None:
         super().__init__()
         self.encoder = nn.Sequential(
@@ -78,7 +79,7 @@ class EfficientADModel(BaseAnomalyModel):
     Student-Teacher Feature Distillation & AutoEncoder Model.
 
     A frozen pre-trained Teacher network provides high-fidelity reference features.
-    The Student network mimic the Teacher features, while an AutoEncoder reconstructs 
+    The Student network mimic the Teacher features, while an AutoEncoder reconstructs
     intermediate Teacher features for normal images.
     Anomalies trigger high student distillation gap and poor autoencoder reconstruction.
     """
@@ -97,7 +98,9 @@ class EfficientADModel(BaseAnomalyModel):
 
         # Active AutoEncoder branch
         self.autoencoder = FeatureAutoEncoder(channels=128)
-        print("Initialized Student-Teacher + AutoEncoder feature distillation model with ResNet-18 backbone.")
+        print(
+            "Initialized Student-Teacher + AutoEncoder feature distillation model with ResNet-18 backbone."
+        )
 
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
@@ -146,6 +149,5 @@ class EfficientADModel(BaseAnomalyModel):
             "score": score,
             "teacher_features": teacher_features,
             "student_features": student_features,
-            "reconstructed_features": reconstructed_features
+            "reconstructed_features": reconstructed_features,
         }
-

@@ -77,17 +77,19 @@ class CameraInspector:
     def _send_plc_signal(self, is_defective: bool):
         """Sends a physical quality control trigger (binary byte signal) to a PLC industrial controller."""
         import socket
-        
+
         # Localhost port representing Modbus/socket simulation
         plc_ip = "127.0.0.1"
         plc_port = 5002
-        
+
         # Binary signal payload: 0x01 for defect (reject), 0x00 for normal (pass)
         signal = b"\x01" if is_defective else b"\x00"
-        
+
         action = "REJECT" if is_defective else "PASS"
-        print(f"[PLC Link] Emitting binary decision state: {action} (payload: {signal.hex()})")
-        
+        print(
+            f"[PLC Link] Emitting binary decision state: {action} (payload: {signal.hex()})"
+        )
+
         try:
             # Emit signal via TCP stream with tight real-time timeout (50ms) to prevent inference stalls
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

@@ -47,7 +47,9 @@ class SyntheticAnomalyGenerator:
         return img_copy, mask
 
     @staticmethod
-    def simulate_porosity(image: np.ndarray, num_voids: int = 5) -> Tuple[np.ndarray, np.ndarray]:
+    def simulate_porosity(
+        image: np.ndarray, num_voids: int = 5
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Simulates gas pockets (porosity) using dark elliptical voids."""
         h, w, _ = image.shape
         mask = np.zeros((h, w), dtype=np.uint8)

@@ -48,7 +48,7 @@ model_category = st.sidebar.selectbox(
 if st.sidebar.button("🔌 Test Robot PLC Connection"):
     from autoweld_vision.deployment.camera import CameraInspector
     from autoweld_vision.models.efficientad import EfficientADModel
-    
+
     try:
         dummy_model = EfficientADModel(pretrained=False)
         inspector = CameraInspector(model=dummy_model, camera_url="0")

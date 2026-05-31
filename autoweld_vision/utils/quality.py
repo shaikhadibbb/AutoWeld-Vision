@@ -33,6 +33,7 @@ class IndustrialQualityAuditor:
     def _calculate_file_hash(self, filepath: str) -> str:
         """Calculates the SHA-256 hash of a file on disk to ensure physical audit integrity."""
         import hashlib
+
         if not os.path.exists(filepath):
             return ""
         sha256 = hashlib.sha256()
@@ -47,20 +48,22 @@ class IndustrialQualityAuditor:
         import hashlib
         import hmac
         import json
-        
+
         if secret_key is None:
             secret_key = os.environ.get("AUTOWELD_SECRET_KEY")
             if not secret_key:
                 # Log technical warning for local execution, explaining how to configure for production
-                print("Warning: AUTOWELD_SECRET_KEY environment variable is not defined.")
-                print("         Using secure fallback key for local verification testing.")
+                print(
+                    "Warning: AUTOWELD_SECRET_KEY environment variable is not defined."
+                )
+                print(
+                    "         Using secure fallback key for local verification testing."
+                )
                 secret_key = "autoweld_secure_secret_2026_fallback"
-                
+
         serialized = json.dumps(metadata, sort_keys=True)
         signature = hmac.new(
-            secret_key.encode("utf-8"),
-            serialized.encode("utf-8"),
-            hashlib.sha256
+            secret_key.encode("utf-8"), serialized.encode("utf-8"), hashlib.sha256
         )
         return signature.hexdigest()
 
@@ -79,6 +82,7 @@ class IndustrialQualityAuditor:
         """
         import hashlib
         import json
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_path = os.path.join(self.output_dir, f"report_{vin}_{timestamp}.png")
 
@@ -125,7 +129,9 @@ class IndustrialQualityAuditor:
             ledger_file.write(json.dumps(record) + "\n")
 
         print(f"Audit report saved for VIN {vin} at {report_path}")
-        print(f"✓ Cryptographically sealed quality record logged in append-only ledger: {ledger_path}")
+        print(
+            f"✓ Cryptographically sealed quality record logged in append-only ledger: {ledger_path}"
+        )
         return report_path
 
 
