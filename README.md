@@ -120,3 +120,14 @@ streamlit run app.py
 1. **Bare Aluminum Glare**: Metallic surfaces behave like mirrors. Glares produce massive high-frequency activations that trick distillation models into flagging normal boundaries as anomalous. I lowered the CLAHE contrast clip parameter from $4.0$ to $2.0$ to avoid pixel clipping and added a small spatial Gaussian filter to smooth remaining specular edges.
 2. **Hidden Voids**: Camera-based models only capture surface defects. Internal air pockets or lack of penetration depth are invisible to optical sensors. An industrial setup requires training these models on radiographic X-ray datasets (such as GDXray).
 3. **Cold Boot Lag**: Loading massive Wide-ResNet weights and fitting coresets on startup introduces a delay of about 8 seconds before the inspection loop goes live.
+
+---
+
+## 6. References & Citations
+
+If you utilize this pipeline or scratch implementations in your research or industrial audits, please cite the original paradigms:
+
+1. **PatchCore (Total Recall):** Roth, K., Pemberton, L., Zhang, M., Cherian, A., Nixon, T., & Harada, T. (2022). Towards Total Recall in Industrial Anomaly Detection. *IEEE/CVF CVPR*, 14318-14328.
+2. **EfficientAD (Student-Teacher):** Batzner, K., Heckler, L., & König, R. (2024). EfficientAD: Accurate, Real-Time Anomaly Detection in Images. *ICML*.
+3. **MVTec AD Dataset:** Bergmann, P., Fauser, M., Sattlegger, D., & Steger, C. (2019). MVTec AD -- A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection. *IEEE/CVF CVPR*, 9592-9600.
+4. **Platt Scaling Calibration:** Platt, J. (1999). Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods. *Advances in Large Margin Classifiers*, 61-74.
