@@ -15,6 +15,42 @@ from scipy.optimize import minimize
 from .base import BaseAnomalyModel
 
 
+class AnomalyNormalizer:
+    """
+    Fits and normalizes anomaly scores to [0, 1] using min-max scaling
+    learned from validation/calibration sets.
+    """
+    def __init__(self) -> None:
+        self.min_val: float = 0.0
+        self.max_val: float = 1.0
+        self.is_fitted: bool = False
+
+    def fit(self, scores: np.ndarray) -> None:
+        """Fits min and max values on validation scores."""
+        if len(scores) == 0:
+            return
+        self.min_val = float(np.min(scores))
+        self.max_val = float(np.max(scores))
+        if self.max_val == self.min_val:
+            self.max_val += 1e-8
+        self.is_fitted = True
+
+    def normalize(self, scores: Any) -> Any:
+        """Normalizes scores (numpy array or torch tensor) to [0, 1]."""
+        if isinstance(scores, torch.Tensor):
+            return torch.clamp(
+                (scores - self.min_val) / (self.max_val - self.min_val + 1e-8),
+                0.0,
+                1.0,
+            )
+        else:
+            return np.clip(
+                (scores - self.min_val) / (self.max_val - self.min_val + 1e-8),
+                0.0,
+                1.0,
+            )
+
+
 class AnomalyEnsemble(BaseAnomalyModel):
     """
     Weighted Late Fusion Ensemble for Anomaly Detection.
@@ -37,6 +73,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
         self._learned_weights: Dict[str, float] = {
             name: 1.0 / len(models) for name in models.keys()
         }
+        self.normalizers = {name: AnomalyNormalizer() for name in models.keys()}
 
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
@@ -57,18 +94,21 @@ class AnomalyEnsemble(BaseAnomalyModel):
 
         # Extract individual scores
         scores: Dict[str, torch.Tensor] = {
-            name: res["score"] for name, res in results.items()
+            name: (res.get("pred_score", res.get("score")) if isinstance(res, dict) else res)
+            for name, res in results.items()
         }
 
         # Weighted fusion of scores
         fused_score = torch.zeros_like(list(scores.values())[0])
         for name, score in scores.items():
-            fused_score += self._learned_weights[name] * score
+            norm_score = self.normalizers[name].normalize(score)
+            fused_score += self._learned_weights[name] * norm_score
 
         # Weighted fusion of anomaly maps
         fused_map = torch.zeros_like(list(results.values())[0]["anomaly_map"])
         for name, res in results.items():
-            fused_map += self._learned_weights[name] * res["anomaly_map"]
+            norm_map = self.normalizers[name].normalize(res["anomaly_map"])
+            fused_map += self._learned_weights[name] * norm_map
 
         return {"score": fused_score, "anomaly_map": fused_map, "model_scores": scores}
 
@@ -88,17 +128,22 @@ class AnomalyEnsemble(BaseAnomalyModel):
             val_scores_m2: Array of validation anomaly scores from model 2.
             val_labels: Binary ground-truth labels (0 for normal, 1 for anomaly).
         """
-
-        # Sigmoid activation helper to bound scores to [0, 1] for BCE loss
-        def sigmoid(v: np.ndarray) -> np.ndarray:
-            return 1.0 / (1.0 + np.exp(-v))
+        model_names = list(self.models.keys())
+        if len(model_names) >= 2:
+            self.normalizers[model_names[0]].fit(val_scores_m1)
+            self.normalizers[model_names[1]].fit(val_scores_m2)
+            
+            norm_val_m1 = self.normalizers[model_names[0]].normalize(val_scores_m1)
+            norm_val_m2 = self.normalizers[model_names[1]].normalize(val_scores_m2)
+        else:
+            norm_val_m1 = val_scores_m1
+            norm_val_m2 = val_scores_m2
 
         def bce_loss(weights: np.ndarray) -> float:
             w1, w2 = weights
-            fused = w1 * val_scores_m1 + w2 * val_scores_m2
-            probs = sigmoid(fused)
+            fused = w1 * norm_val_m1 + w2 * norm_val_m2
             # Clip probabilities to avoid log(0)
-            probs = np.clip(probs, 1e-7, 1.0 - 1e-7)
+            probs = np.clip(fused, 1e-7, 1.0 - 1e-7)
             loss = -np.mean(
                 val_labels * np.log(probs) + (1.0 - val_labels) * np.log(1.0 - probs)
             )
@@ -117,7 +162,6 @@ class AnomalyEnsemble(BaseAnomalyModel):
             w1, w2 = res.x
             self.w1 = float(w1)
             self.w2 = float(w2)
-            model_names = list(self.models.keys())
             if len(model_names) >= 2:
                 self._learned_weights[model_names[0]] = self.w1
                 self._learned_weights[model_names[1]] = self.w2

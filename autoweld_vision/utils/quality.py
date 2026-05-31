@@ -30,6 +30,30 @@ class IndustrialQualityAuditor:
         overlay = cv2.addWeighted(image, 0.6, heatmap, 0.4, 0)
         return overlay
 
+    def _calculate_file_hash(self, filepath: str) -> str:
+        """Calculates the SHA-256 hash of a file on disk to ensure physical audit integrity."""
+        import hashlib
+        if not os.path.exists(filepath):
+            return ""
+        sha256 = hashlib.sha256()
+        with open(filepath, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256.update(byte_block)
+        return sha256.hexdigest()
+
+    def _sign_metadata(self, metadata: dict, secret_key: str = "autoweld_secure_secret_2026") -> str:
+        """Generates a secure HMAC-SHA256 signature for the given metadata block."""
+        import hashlib
+        import hmac
+        import json
+        serialized = json.dumps(metadata, sort_keys=True)
+        signature = hmac.new(
+            secret_key.encode("utf-8"),
+            serialized.encode("utf-8"),
+            hashlib.sha256
+        )
+        return signature.hexdigest()
+
     def save_audit_report(
         self,
         vin: str,
@@ -37,11 +61,14 @@ class IndustrialQualityAuditor:
         anomaly_map: np.ndarray,
         score: float,
         decision: str,
-    ):
+    ) -> str:
         """
         Saves a visual audit report for a specific VIN.
         Includes original image, heatmap, and decision metadata.
+        Generates and seals the metadata to an append-only cryptographic ledger for IATF 16949 compliance.
         """
+        import hashlib
+        import json
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_path = os.path.join(self.output_dir, f"report_{vin}_{timestamp}.png")
 
@@ -63,7 +90,32 @@ class IndustrialQualityAuditor:
         plt.savefig(report_path)
         plt.close()
 
+        # Compute cryptographic file and raw data hashes
+        raw_image_hash = hashlib.sha256(image.tobytes()).hexdigest()
+        report_file_hash = self._calculate_file_hash(report_path)
+
+        # Structure the verification block for quality audits
+        record = {
+            "vin": vin,
+            "timestamp": datetime.now().isoformat(),
+            "anomaly_score": float(score),
+            "quality_decision": decision,
+            "raw_image_sha256": raw_image_hash,
+            "report_file_sha256": report_file_hash,
+            "compliance_schema": "IATF-16949-8.5.2.1",
+        }
+
+        # Seal with HMAC signature
+        signature = self._sign_metadata(record)
+        record["signature_hmac_sha256"] = signature
+
+        # Append to the tamper-evident local visual audit ledger
+        ledger_path = os.path.join(self.output_dir, "audit_ledger.jsonl")
+        with open(ledger_path, "a") as ledger_file:
+            ledger_file.write(json.dumps(record) + "\n")
+
         print(f"Audit report saved for VIN {vin} at {report_path}")
+        print(f"✓ Cryptographically sealed quality record logged in append-only ledger: {ledger_path}")
         return report_path
 
 

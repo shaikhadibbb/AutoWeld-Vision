@@ -103,42 +103,12 @@ def run_real_inspection(
     THRESHOLD = 0.5
     decision = "PASS" if anomaly_score <= THRESHOLD else "FAIL"
 
-    # 4. Generate side-by-side IATF 16949 Audit Report
-    os.makedirs("audit_logs", exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = f"audit_logs/report_{vin}_{timestamp}.png"
-
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-
-    # Left plot: Original image
-    axes[0].imshow(img)
-    axes[0].set_title(f"Original Weld (VIN: {vin})")
-    axes[0].axis("off")
-
-    # Right plot: Anomaly map overlay using RdYlGn_r colormap
-    axes[1].imshow(img)
-    # Resize anomaly map back to original size for exact spatial overlay
-    resized_amap = Image.fromarray(anomaly_map).resize(
-        (orig_w, orig_h), Image.Resampling.BILINEAR
-    )
-    resized_amap_np = np.array(resized_amap)
-
-    # Overlay using custom Red-Yellow-Green (reversed) colormap
-    axes[1].imshow(resized_amap_np, cmap="RdYlGn_r", alpha=0.5)
-    axes[1].set_title(f"Anomaly Map Overlay (Score: {anomaly_score:.4f})")
-    axes[1].axis("off")
-
-    # Add metadata for IATF 16949 Audit compliance
-    status_text = f"Quality Decision: {decision} | Threshold: {THRESHOLD:.2f}"
-    fig.suptitle(
-        f"{status_text}\nIATF 16949 Audit Trail | Model: PatchCore v1.0.0 | Time: {timestamp}",
-        fontsize=12,
-    )
-
-    plt.savefig(report_path, dpi=150, bbox_inches="tight")
-    plt.close()
-
-    print(f"IATF 16949 Audit Report generated at: {report_path}")
+    # 4. Generate side-by-side IATF 16949 Audit Report using IndustrialQualityAuditor
+    from autoweld_vision.utils.quality import IndustrialQualityAuditor
+    auditor = IndustrialQualityAuditor(output_dir="audit_logs")
+    img_np = np.array(img)
+    
+    report_path = auditor.save_audit_report(vin, img_np, anomaly_map, anomaly_score, decision)
 
     return {
         "vin": vin,

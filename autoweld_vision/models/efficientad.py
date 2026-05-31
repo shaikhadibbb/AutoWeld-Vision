@@ -46,18 +46,45 @@ class SlicedResNet(nn.Module):
         return x
 
 
+class FeatureAutoEncoder(nn.Module):
+    """AutoEncoder that reconstructs teacher intermediate features for anomaly profiling."""
+    def __init__(self, channels: int = 128) -> None:
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(channels, channels // 2, kernel_size=3, padding=1),
+            nn.BatchNorm2d(channels // 2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels // 2, channels // 4, kernel_size=3, padding=1),
+            nn.BatchNorm2d(channels // 4),
+            nn.ReLU(inplace=True),
+        )
+        self.decoder = nn.Sequential(
+            nn.Conv2d(channels // 4, channels // 2, kernel_size=3, padding=1),
+            nn.BatchNorm2d(channels // 2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels // 2, channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(channels),
+            nn.ReLU(inplace=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        latent = self.encoder(x)
+        return self.decoder(latent)
+
+
 @ModelRegistry.register("efficientad")
 class EfficientADModel(BaseAnomalyModel):
     """
-    Student-Teacher Feature Distillation Model.
+    Student-Teacher Feature Distillation & AutoEncoder Model.
 
     A frozen pre-trained Teacher network provides high-fidelity reference features.
-    The Student network is actively trained to mimic the Teacher on normal images.
-    During evaluation, anomalous regions produce elevated L2 feature discrepancies.
+    The Student network mimic the Teacher features, while an AutoEncoder reconstructs 
+    intermediate Teacher features for normal images.
+    Anomalies trigger high student distillation gap and poor autoencoder reconstruction.
     """
 
     def __init__(self, pretrained: bool = True) -> None:
-        """Initializes the Student and Teacher networks."""
+        """Initializes the Student, Teacher, and AutoEncoder networks."""
         super().__init__()
         # Frozen Teacher network with pre-trained ImageNet weights
         self.teacher = SlicedResNet(pretrained=pretrained)
@@ -67,7 +94,10 @@ class EfficientADModel(BaseAnomalyModel):
 
         # Active Student network with random initialization
         self.student = SlicedResNet(pretrained=False)
-        print("Initialized Student-Teacher feature distillation model with ResNet-18 backbone.")
+
+        # Active AutoEncoder branch
+        self.autoencoder = FeatureAutoEncoder(channels=128)
+        print("Initialized Student-Teacher + AutoEncoder feature distillation model with ResNet-18 backbone.")
 
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
@@ -78,7 +108,7 @@ class EfficientADModel(BaseAnomalyModel):
 
         Returns:
             A dictionary containing:
-                - 'anomaly_map': The pixel-level L2 discrepancy maps.
+                - 'anomaly_map': The combined pixel-level anomaly maps.
                 - 'score': The image-level maximum discrepancy scores.
         """
         self.teacher.eval()
@@ -86,10 +116,18 @@ class EfficientADModel(BaseAnomalyModel):
             teacher_features = self.teacher(x)
 
         student_features = self.student(x)
+        reconstructed_features = self.autoencoder(teacher_features)
 
-        # Compute L2 distance map channel-wise
-        diff = teacher_features - student_features
-        anomaly_map = torch.mean(diff**2, dim=1, keepdim=True)
+        # Compute L2 distance map channel-wise for distillation
+        diff_distill = teacher_features - student_features
+        map_distill = torch.mean(diff_distill**2, dim=1, keepdim=True)
+
+        # Compute L2 distance map channel-wise for AutoEncoder reconstruction
+        diff_ae = teacher_features - reconstructed_features
+        map_reconstruct = torch.mean(diff_ae**2, dim=1, keepdim=True)
+
+        # Fuse both maps (average of distillation and autoencoder reconstruction)
+        anomaly_map = 0.5 * map_distill + 0.5 * map_reconstruct
 
         # Upsample anomaly map to original input dimensions
         anomaly_map = F.interpolate(
@@ -103,4 +141,11 @@ class EfficientADModel(BaseAnomalyModel):
         batch_size = x.shape[0]
         score = anomaly_map.view(batch_size, -1).max(dim=1)[0].unsqueeze(1)
 
-        return {"anomaly_map": anomaly_map, "score": score}
+        return {
+            "anomaly_map": anomaly_map,
+            "score": score,
+            "teacher_features": teacher_features,
+            "student_features": student_features,
+            "reconstructed_features": reconstructed_features
+        }
+
