@@ -62,16 +62,35 @@ class GDXrayWeldDataset(Dataset):
                         tree = ET.parse(xml_path)
                         root = tree.getroot()
                         for obj in root.findall("object"):
-                            name = obj.find("name").text
-                            if "defect" in name.lower() or "anomaly" in name.lower():
-                                has_defect = True
-                                bbox = obj.find("bndbox")
-                                if bbox is not None:
-                                    xmin = int(bbox.find("xmin").text)
-                                    ymin = int(bbox.find("ymin").text)
-                                    xmax = int(bbox.find("xmax").text)
-                                    ymax = int(bbox.find("ymax").text)
-                                    boxes.append([xmin, ymin, xmax, ymax])
+                            name_el = obj.find("name")
+                            if name_el is not None and name_el.text is not None:
+                                name = name_el.text
+                                if (
+                                    "defect" in name.lower()
+                                    or "anomaly" in name.lower()
+                                ):
+                                    has_defect = True
+                                    bbox = obj.find("bndbox")
+                                    if bbox is not None:
+                                        xmin_el = bbox.find("xmin")
+                                        ymin_el = bbox.find("ymin")
+                                        xmax_el = bbox.find("xmax")
+                                        ymax_el = bbox.find("ymax")
+                                        if (
+                                            xmin_el is not None
+                                            and xmin_el.text is not None
+                                            and ymin_el is not None
+                                            and ymin_el.text is not None
+                                            and xmax_el is not None
+                                            and xmax_el.text is not None
+                                            and ymax_el is not None
+                                            and ymax_el.text is not None
+                                        ):
+                                            xmin = int(xmin_el.text)
+                                            ymin = int(ymin_el.text)
+                                            xmax = int(xmax_el.text)
+                                            ymax = int(ymax_el.text)
+                                            boxes.append([xmin, ymin, xmax, ymax])
                     except Exception:
                         pass
 

@@ -126,14 +126,16 @@ class AnomalyEnsemble(BaseAnomalyModel):
             results[name] = model(x)
 
         # Extract individual scores
-        scores: Dict[str, torch.Tensor] = {
-            name: (
-                res.get("pred_score", res.get("score"))
-                if isinstance(res, dict)
-                else res
-            )
-            for name, res in results.items()
-        }
+        scores: Dict[str, torch.Tensor] = {}
+        for name, res in results.items():
+            if isinstance(res, dict):
+                score_val = res.get("pred_score")
+                if score_val is None:
+                    score_val = res.get("score")
+                assert score_val is not None
+                scores[name] = torch.as_tensor(score_val)
+            else:
+                scores[name] = torch.as_tensor(res)
 
         # Weighted fusion of calibrated scores
         fused_score = torch.zeros_like(list(scores.values())[0])

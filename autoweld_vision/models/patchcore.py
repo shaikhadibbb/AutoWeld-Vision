@@ -160,9 +160,9 @@ class PatchCoreModel(BaseAnomalyModel):
         # Keep selected size capped at 1500 for runtime latency efficiency
         n_select = min(n_select, 1500)
 
-        selected_indices = []
+        selected_indices: List[int] = []
         # Seed with a random patch vector
-        start_idx = torch.randint(0, num_patches, (1,)).item()
+        start_idx: int = int(torch.randint(0, num_patches, (1,)).item())
         selected_indices.append(start_idx)
 
         # Initialize distance tracking
@@ -171,7 +171,7 @@ class PatchCoreModel(BaseAnomalyModel):
 
         # Iteratively select the most distant patches
         for _ in range(1, n_select):
-            new_idx = torch.argmax(min_distances).item()
+            new_idx: int = int(torch.argmax(min_distances).item())
             selected_indices.append(new_idx)
 
             # Update min distances with the new addition
@@ -179,7 +179,11 @@ class PatchCoreModel(BaseAnomalyModel):
             new_distances = torch.norm(patches - new_patch, p=2, dim=1)
             min_distances = torch.min(min_distances, new_distances)
 
-        return patches[selected_indices]
+        # Compile indices as a long tensor to prevent mypy typing errors
+        indices_tensor = torch.tensor(
+            selected_indices, dtype=torch.long, device=patches.device
+        )
+        return patches[indices_tensor]
 
     def forward(self, x: torch.Tensor) -> Dict[str, Any]:
         """
