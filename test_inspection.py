@@ -11,11 +11,9 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from datetime import datetime
 import torch
 from PIL import Image
 import numpy as np
-import matplotlib.pyplot as plt
 from torchvision import transforms as T
 from typing import Dict, Any
 

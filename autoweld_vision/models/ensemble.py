@@ -9,7 +9,7 @@ Includes DefectRouter which routes defects using spatial geometry.
 
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Union
+from typing import Dict, Any
 import numpy as np
 from scipy.optimize import minimize
 from .base import BaseAnomalyModel

@@ -39,7 +39,6 @@ FigureCanvasAgg.tostring_rgb = tostring_rgb_patched
 
 from anomalib.data import MVTec
 from autoweld_vision.models.patchcore import PatchCoreModel
-from anomalib.engine import Engine
 from autoweld_vision.models.ensemble import AnomalyEnsemble
 from autoweld_vision.models.efficientad import EfficientADModel
 
