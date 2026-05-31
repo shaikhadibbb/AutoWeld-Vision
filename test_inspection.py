@@ -49,9 +49,9 @@ def load_inspection_model(category: str = "bottle") -> Patchcore:
     if os.path.exists(weights_path):
         model.load_state_dict(torch.load(weights_path, map_location="cpu"))
         model.eval()
-        print(f"✓ Successfully loaded trained PatchCore model from {weights_path}")
+        print(f"Loaded trained PatchCore model from {weights_path}")
     else:
-        print(f"⚠️  Trained weights not found at {weights_path}")
+        print(f"Trained weights not found at {weights_path}")
         print("   Please run standard training first: python scripts/run_benchmark.py")
         raise FileNotFoundError(f"Trained weights not found at {weights_path}")
     return model
@@ -66,7 +66,7 @@ def run_real_inspection(
     try:
         model = load_inspection_model(category)
     except FileNotFoundError:
-        print("⚠️  Falling back to pipeline Demo Mode...")
+        print("Falling back to pipeline Demo Mode...")
         return run_demo_inspection(image_path, vin)
 
     # 2. Preprocess image
@@ -138,7 +138,7 @@ def run_real_inspection(
     plt.savefig(report_path, dpi=150, bbox_inches="tight")
     plt.close()
 
-    print(f"✓ IATF 16949 Audit Report generated at: {report_path}")
+    print(f"IATF 16949 Audit Report generated at: {report_path}")
 
     return {
         "vin": vin,

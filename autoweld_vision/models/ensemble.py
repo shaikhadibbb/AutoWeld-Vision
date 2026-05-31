@@ -2,8 +2,9 @@
 Late Fusion Ensemble and Defect Gating for Industrial Anomaly Detection.
 
 This module implements AnomalyEnsemble which fuses the anomaly scores and anomaly maps
-from PatchCore and EfficientAD. The score fusion weights are learned programmatically
-by minimizing binary cross-entropy validation loss on a held-out validation split.
+from PatchCore and Student-Teacher models. The score fusion weights are learned 
+programmatically by minimizing binary cross-entropy validation loss on validation splits.
+Includes DefectRouter which routes defects using spatial geometry.
 """
 
 import torch
@@ -19,7 +20,7 @@ class AnomalyEnsemble(BaseAnomalyModel):
     Weighted Late Fusion Ensemble for Anomaly Detection.
 
     Combines anomaly scores and anomaly maps from multiple models (e.g. PatchCore and EfficientAD).
-    The weights are learned by minimizing validation binary cross-entropy loss.
+    The weights are learned dynamically by minimizing validation binary cross-entropy loss.
     """
 
     def __init__(self, models: Dict[str, nn.Module]) -> None:
@@ -60,7 +61,6 @@ class AnomalyEnsemble(BaseAnomalyModel):
         }
 
         # Weighted fusion of scores
-        # We handle arbitrary keys but specifically patchcore and efficientad if present
         fused_score = torch.zeros_like(list(scores.values())[0])
         for name, score in scores.items():
             fused_score += self._learned_weights[name] * score
@@ -132,7 +132,8 @@ class DefectRouter:
     """
     Defect-Type-Specific Routing Gating Mechanism.
 
-    Routes input images to specialist anomaly detection models based on coarse detection.
+    Uses a deterministic geometric shape and area profiling classifier to route 
+    defects to specialized downstream models based on structural morphology.
     """
 
     def __init__(self, specialists: Dict[str, nn.Module]) -> None:
@@ -140,29 +141,58 @@ class DefectRouter:
         Initializes the DefectRouter.
 
         Args:
-            specialists: A dictionary mapping defect categories to their specialized models.
+            specialists: A dictionary mapping defect categories to specialized models.
         """
         self.specialists = specialists
-        self.classifier = nn.Sequential(
-            nn.Conv2d(1, 8, 3, padding=1),
-            nn.AdaptiveAvgPool2d((4, 4)),
-            nn.Flatten(),
-            nn.Linear(128, len(specialists)),
-        )
 
     def route(self, image: torch.Tensor, coarse_map: torch.Tensor) -> str:
         """
-        Routes the image to the appropriate specialist model.
+        Routes the image to the appropriate specialist model based on spatial geometry.
 
         Args:
-            image: The input image tensor.
-            coarse_map: The initial coarse anomaly map tensor.
+            image: The input image tensor (B, C, H, W).
+            coarse_map: The initial coarse anomaly map tensor (B, 1, H, W).
 
         Returns:
             The name of the chosen specialist defect model.
         """
-        with torch.no_grad():
-            logits = self.classifier(coarse_map)
-            defect_idx = int(torch.argmax(logits, dim=1).item())
-            defect_type = list(self.specialists.keys())[defect_idx]
-        return defect_type
+        # Threshold the coarse anomaly map to isolate defect regions
+        mask = (coarse_map > 0.5).float()
+
+        # Compute spatial footprint size
+        defect_area = float(mask.sum().item())
+
+        # If no significant defect is detected, route to standard base specialist
+        if defect_area < 50:
+            return list(self.specialists.keys())[0]
+
+        # Calculate defect spatial span along height and width
+        proj_h = mask.sum(dim=(0, 1, 3)) > 0
+        proj_w = mask.sum(dim=(0, 1, 2)) > 0
+
+        indices_h = torch.where(proj_h)[0]
+        indices_w = torch.where(proj_w)[0]
+
+        if len(indices_h) == 0 or len(indices_w) == 0:
+            return list(self.specialists.keys())[0]
+
+        span_h = float(indices_h[-1] - indices_h[0] + 1)
+        span_w = float(indices_w[-1] - indices_w[0] + 1)
+
+        aspect_ratio = span_h / (span_w + 1e-6)
+
+        # Geometric routing rules:
+        # 1. Elongated structures (cracks, lack of fusion) route to Crack/Cable Specialists.
+        # 2. Localized circular shapes (porosity, pores) route to Pore/Bottle Specialists.
+        # 3. High area complex defects route to primary base ensembled model.
+        if aspect_ratio > 3.0 or aspect_ratio < 0.33:
+            for key in self.specialists.keys():
+                if "crack" in key.lower() or "cable" in key.lower():
+                    return key
+        elif defect_area < 1200:
+            for key in self.specialists.keys():
+                if "pore" in key.lower() or "bottle" in key.lower():
+                    return key
+
+        # Fallback to the first registered specialist
+        return list(self.specialists.keys())[0]

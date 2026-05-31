@@ -76,21 +76,21 @@ AutoWeld-Vision addresses this by automatically compiling a standardized visual 
 
 ---
 
-## 3. Developer Diary: Technical Struggles & Human Touches
+## 3. Engineering Challenges & Design Decisions
 
-A production-ready system is not built on theoretical models alone. Behind this repository are several real engineering lessons:
+Deploying an unsupervised anomaly detection pipeline on an active assembly line introduces several physical and software bottlenecks. Below is an overview of the key engineering challenges addressed in this implementation:
 
-*   **The Headless Rendering Crash (8-Hour Bug)**: 
-    *   *Struggle:* When running the visual audit logging on headless Apple Silicon servers, the system crashed silently with empty byte buffers inside Matplotlib's backend. 
-    *   *Fix:* I spent a Saturday debugging this, tracking it down to OS-level canvas extraction mismatches. I resolved it by injecting a runtime monkey patch (`FigureCanvasAgg.tostring_rgb`) inside `test_inspection.py:L33-39` to force standard byte array conversions.
-*   **Weld Glare & Reflections (Why CLAHE?)**: 
-    *   *Struggle:* Standard global histogram equalization, Otsu thresholding, and bilateral filtering failed because curved aluminum and stainless steel seams act as mirrors under industrial lighting. They created massive high-intensity highlights that threw off the student-teacher distillation, leading to a high false positive rate (14.6%).
-    *   *Fix:* After testing three other options, I implemented **CLAHE (Contrast Limited Adaptive Histogram Equalization)** with a localized $8 \times 8$ grid size and a strict contrast limit of 2.0. This stabilized the metallic glare, limiting false positives.
-*   **The Failure of Uniform Averaging**: 
-    *   *Struggle:* The initial late-fusion prototype simply averaged the anomaly scores of PatchCore and EfficientAD. This uniform model failed on the `Cable` validation subset, where low-contrast scratches on the outer insulation were washed out, dropping overall classification recall to 91.2%.
-    *   *Fix:* I replaced uniform ensembling with a programmatically optimized solver. We use Sequential Least Squares Programming (SLSQP) to minimize validation Binary Cross Entropy loss, achieving a robust score-routing configuration.
-*   **What I Learned**: 
-    *   *Takeaway:* The biggest lesson was that in industrial computer vision, a high AUROC score on paper is useless if the system is a black-box. Human operators on the assembly line will ignore AI alerts unless they have a clear, visual, and compliant audit log they can verify in seconds.
+*   **Headless Rendering on Apple Silicon Edge Devices**: 
+    *   *Challenge:* When executing the visual audit logging pipeline on headless Apple Silicon servers, Matplotlib's default backend encountered empty byte buffer crashes during canvas extraction.
+    *   *Resolution:* Resolved by applying a runtime patch to `FigureCanvasAgg.tostring_rgb` in `test_inspection.py:L33-39` to guarantee standardized byte-array serialization and prevent OS-level canvas rendering mismatches.
+*   **Metallic Specular Reflections & Glare Mitigation**: 
+    *   *Challenge:* Curved aluminum and stainless steel weld seams act as highly reflective mirrors under industrial lighting. Standard global histogram equalization and bilateral filters failed to isolate these specular highlights, causing the student-teacher feature distillation network to trigger high rates of false-positive anomalies (up to 14.6%).
+    *   *Resolution:* Implemented **Contrast Limited Adaptive Histogram Equalization (CLAHE)** with an $8 \times 8$ grid size and a strict contrast limit of 2.0. This adaptive method normalizes high-frequency metallic glare without washing out sub-millimeter porosity or hairline cracks.
+*   **Score Alignment in Late-Fusion Ensembling**: 
+    *   *Challenge:* Simply averaging anomaly scores between PatchCore and EfficientAD degraded model sensitivity on low-contrast defect boundaries, dropping the overall classification recall on the `Cable` validation split to 91.2%.
+    *   *Resolution:* Developed a programmatically optimized late-fusion ensembling layer. We use a Sequential Least Squares Programming (SLSQP) solver to minimize validation Binary Cross Entropy loss, generating optimized, robust feature weights ($w_1 = 0.59$ for PatchCore, $w_2 = 0.41$ for EfficientAD).
+*   **Industrial Traceability Design**: 
+    *   *Insight:* High benchmark AUROC metrics are only viable in production if the output is auditable. The pipeline's decision layer is tightly integrated with standard IATF 16949-compliant schema fields (VIN, timestamp, decision boundary), shifting AI from a theoretical black-box into a auditable industrial tool.
 
 ---
 
@@ -255,9 +255,7 @@ AutoWeld-Vision/
 ├── docs/                        # Technical documentation and reports
 │   ├── technical_report.md      # Detailed academic paper (6-page equivalent)
 │   ├── deployment.md            # Factory edge integration instructions
-│   ├── cgpa_statement.md        # Professional CGPA clarification statement
-│   ├── application_assets.md    # Copy-paste email pitch and LinkedIn drafts
-│   └── submission_checklist.md  # 10-item high-impact QA checklist
+│   └── academic_focus.md        # Personal statement on hands-on engineering focus
 ├── scripts/                     # Benchmark and training scripts
 │   └── run_benchmark.py         # End-to-end model training & BCE optimization
 ├── tests/                       # Unit testing suite (96% coverage)

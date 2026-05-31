@@ -8,7 +8,7 @@ All notable changes to the **AutoWeld-Vision** quality control pipeline will be 
 ### Added
 - **Interactive Operator Terminal**: Created a self-contained Streamlit application (`app.py`) for factory-floor supervisors to upload custom welds, trigger the late-fusion pipeline, and download certified visual audit reports.
 - **FastAPI Backend Support**: Standardized API routing under `/inspect` with automated model status metrics and fail-safe demo modes.
-- **Pre-Submission Quality Checklist**: Added a 10-item deployment and replication checklist inside `docs/submission_checklist.md`.
+- **Academic Statement**: Added a statement on practical engineering focus and applied systems competence inside `docs/academic_focus.md`.
 - **Contributing Guidelines**: Added `CONTRIBUTING.md` outlining the project's academic and research scope.
 
 ---

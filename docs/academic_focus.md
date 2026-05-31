@@ -1,0 +1,7 @@
+# Practical Engineering Focus and Applied Competence
+
+During my academic career, I have prioritized hands-on systems engineering, machine learning deployment, and solving tangible production challenges. While my cumulative exam-based grades are average, my primary engineering strengths lie in building end-to-end software architectures, applying mathematical optimization to physical problems, and delivering verifiable code bases.
+
+Instead of focusing solely on theoretical models, I have dedicated significant effort to designing and implementing real-world computer vision solutions. In developing *AutoWeld-Vision*, I implemented coreset memory-bank feature extraction (PatchCore) and student-teacher distillation (EfficientAD) to address defect scarcity in manufacturing. To optimize decision scoring, I applied Sequential Least Squares Programming (SLSQP) to programmatically learn fusion weights, rather than relying on uniform averaging or arbitrary thresholds. I also integrated this pipeline with FastAPI, Streamlit, and structured IATF 16949-compliant visual logging for traceability.
+
+This project demonstrates my commitment to code reproducibility, rigorous unit testing, and resolving physical deployment bottlenecks. I am committed to a practical, evidence-based approach to software engineering, where value is measured by the reliability, performance, and traceability of the systems I build.

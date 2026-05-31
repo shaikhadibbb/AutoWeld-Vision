@@ -12,8 +12,8 @@ AutoWeld-Vision uses a multi-modal unsupervised anomaly detection pipeline optim
    * A pre-trained `wide_resnet50_2` network extracts robust local mid-level features, preserving spatial locality of potential defect structures.
 
 3. **Defect Gating & Specialization**:
-   * A lightweight CNN router categorizes coarse regional activation maps.
-   * Specialised Specialist models (e.g. PatchCore, PaDiM, EfficientAD) run parallel inference based on defect gating.
+   * A heuristic geometric router (`DefectRouter`) categorizes coarse regional activation maps based on aspect ratio and bounding box area.
+   * Specialised models (e.g. PatchCore, PaDiM, EfficientAD) run parallel inference based on defect gating routing.
 
 4. **AnomalyEnsemble Score Fusion**:
    * Predicts a combined score using validation BCE SLSQP-optimized weights:
