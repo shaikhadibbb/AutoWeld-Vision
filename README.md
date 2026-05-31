@@ -1,5 +1,7 @@
 # AutoWeld-Vision: Unsupervised Welding Defect Detection
 
+🚀 **[Live Demo: Interactive Operator Terminal](https://autoweld-vision-y8aftc5zdzpmpcxhleshdv.streamlit.app/)**
+
 This project is an unsupervised late-fusion anomaly detection pipeline written in PyTorch. I built it to inspect visual weld seams for surface defects (like porosity, cracks, and voids) in real-time, while automatically logging signed quality reports to satisfy IATF 16949 section 8.5.2.1 compliance.
 
 Rather than just editing YAML files and writing thin wrappers around Anomalib, I spent my time implementing the core algorithms—including intermediate feature hooks, coreset minimax compression, and Platt scaling probability calibration—from scratch in pure PyTorch.
